@@ -2,8 +2,10 @@ import random
 import time
 import numpy as np
 import matplotlib.pyplot as plt
-from typing import Tuple
 import collections
+import os
+from typing import List, Dict, Tuple
+from collections import defaultdict
 from second_main import main_run
 
 
@@ -19,23 +21,12 @@ def aging(population, fitnesses, age_distribution):
     - 1.5 for ages between 0.25 and 0.75 (adult)
     - 0.5 for ages above 0.75 (old)
     """
-    young_age_threshold = 0.25
-    adult_age_threshold = 0.75
-    young_scaling_factor = 0.5
-    adult_scaling_factor = 1.5
-    old_scaling_factor = 0.5
+    young_scale, adult_scale, old_scale = 0.5, 1.5, 0.5
+    thresholds = [0.25, 0.75]
+    scales = [young_scale, adult_scale, old_scale]
 
-    aged_fitnesses = []
-    for age, fitness in zip(age_distribution, fitnesses):
-        if age < young_age_threshold:
-            aged_fitness = fitness * young_scaling_factor
-        elif age < adult_age_threshold:
-            aged_fitness = fitness * adult_scaling_factor
-        else:
-            aged_fitness = fitness * old_scaling_factor
-        aged_fitnesses.append(aged_fitness)
-
-    return aged_fitnesses
+    return [fitness * scales[sum(age > threshold for threshold in thresholds)]
+            for age, fitness in zip(age_distribution, fitnesses)]
 
 
 def rws_linear_scaling(population, fitnesses, a=1.0, b=0.0, min_val=0.0, max_val=1.0):
@@ -136,11 +127,164 @@ def fitness_GA(individual):
             score += 1
     return score
 
+
+def genetic_algorithm(pop_size, num_genes, fitness_func, max_generations, mutation_rate, selection, use_aging):
+    try:
+        start_CPU_time = time.process_time()
+        all_fitness_scores = []
+        all_generations = []
+        population = [[''.join(chr(random.randint(32, 126)) for _ in range(num_genes))] for _ in range(pop_size)]
+        ages = [random.random() for _ in range(pop_size)]
+
+        for generation in range(max_generations):
+            generation_CPU_start = time.process_time()
+            try:
+                fitnesses = [fitness_func(individual[0]) for individual in population]
+            except Exception as e:
+                print(f"Error in fitness function: {e}")
+                return None, None, None, None
+
+            all_fitness_scores.append(fitnesses)
+            all_generations.append(generation)
+
+            avg = np.mean(fitnesses)
+            dev = np.std(fitnesses)
+            print(f"Generation {generation}: Average Fitness = {int(round(avg))}, Standard Deviation = {int(round(dev))}")
+
+            elite_size = int(pop_size * 0.1)
+            elite_indices = sorted(range(pop_size), key=lambda i: fitnesses[i], reverse=True)[:elite_size]
+            elites = [population[i] for i in elite_indices]
+
+            offspring = []
+            if use_aging:
+                aging_fitnesses = aging(population, fitnesses, ages)
+                while len(offspring) < pop_size - elite_size:
+                    if selection == "2":
+                        parent1, parent2 = rws_linear_scaling(population, aging_fitnesses)[0], rws_linear_scaling(population, aging_fitnesses)[0]
+                    elif selection == "1":
+                        parent1, parent2 = sus(population, aging_fitnesses)[0], sus(population, aging_fitnesses)[0]
+                    elif selection == "3":
+                        parent1, parent2 = tournament(population, aging_fitnesses), tournament(population, aging_fitnesses)
+                    elif selection == "4":
+                        parent1, parent2 = rank(population, aging_fitnesses), rank(population, aging_fitnesses)
+                    else:
+                        parent1, parent2 = random.choice(elites)[0], random.choice(elites)[0]
+                    child = ''.join([parent1[i] if random.random() < 0.5 else parent2[i] for i in range(min(len(parent1), len(parent2)))])
+                    child = mutate(child, mutation_rate)
+                    offspring.append([child])
+            else:
+                while len(offspring) < pop_size - elite_size:
+                    if selection == "2":
+                        parent1, parent2 = rws_linear_scaling(population, fitnesses)[0], rws_linear_scaling(population, fitnesses)[0]
+                    elif selection == "1":
+                        parent1, parent2 = sus(population, fitnesses)[0], sus(population, fitnesses)[0]
+                    elif selection == "3":
+                        parent1, parent2 = tournament(population, fitnesses), tournament(population, fitnesses)
+                    elif selection == "4":
+                        parent1, parent2 = rank(population, fitnesses), rank(population, fitnesses)
+                    else:
+                        parent1, parent2 = random.choice(elites)[0], random.choice(elites)[0]
+                    child = ''.join([parent1[i] if random.random() < 0.5 else parent2[i] for i in range(min(len(parent1), len(parent2)))])
+                    child = mutate(child, mutation_rate)
+                    offspring.append([child])
+            population = elites + offspring
+
+            generation_CPU_end = time.process_time()
+            generation_CPU_ticks = generation_CPU_end - generation_CPU_start
+            generation_CPU_elapsed = generation_CPU_end - start_CPU_time
+
+            print(f"CPU Generation {generation}: Ticks Clock CPU = {generation_CPU_ticks} seconds, "
+                  f"Total Elapsed = {generation_CPU_elapsed:.2f} seconds")
+
+        CPU_convergence = time.process_time() - start_CPU_time
+        print(f"CPU Time to convergence: {CPU_convergence:.2f} seconds")
+
+        best_individual = max(population, key=lambda individual: fitness_func(individual[0]))
+        best_fitness = fitness_func(best_individual[0])
+
+        return best_individual[0], best_fitness, all_fitness_scores, all_generations
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return None, None, None, None
+
+def mutate_for_bin_packing(individual, mutation_rate=0.1):
+    if random.random() < mutation_rate:
+        mutation = random.randrange(len(individual))
+        individual[mutation] = random.randrange(len(individual))
+    return individual
+
+
+def tournament_for_bin_packing(population, fitnesses, k=3):
+    if len(population) != len(fitnesses):
+        raise IndexError("Population and fitnesses lists must have the same length.")
+
+    # Check if the population and fitnesses lists are not empty
+    if not population or not fitnesses:
+        raise ValueError("Population and fitnesses lists cannot be empty.")
+
+    # Check if the tournament size is valid
+    if k < 2:
+        raise ValueError("Tournament size (k) must be at least 2.")
+    try:
+        selected = []
+        # Perform tournament selection
+        for _ in range(len(population) // 2):
+            tournament = random.sample(list(zip(population, fitnesses)), k)
+            # Find the individual with the minimum fitness (best individual) in the tournament
+            best_individual, _ = min(tournament, key=lambda x: x[1])
+            # Add the best individual to the selected list
+            selected.append(best_individual)
+        return selected
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
+
+def rank_bin_packing(population, fitnesses):
+    # Check if the population and fitnesses lists have the same length
+    if len(population) != len(fitnesses):
+        raise IndexError("Population and fitnesses lists must have the same length.")
+
+    # Check if the population and fitnesses lists are not empty
+    if not population or not fitnesses:
+        raise ValueError("Population and fitnesses lists cannot be empty.")
+
+    try:
+        # Rank the individuals based on their fitness values
+        ranks = sorted(range(len(fitnesses)), key=lambda i: fitnesses[i], reverse=True)
+
+        # Calculate the rank probabilities
+        rank_probabilities = [1.0 / (rank + 1) for rank in ranks]
+        total_rank_probabilities = sum(rank_probabilities)
+        normalized_rank_probabilities = [prob / total_rank_probabilities for prob in rank_probabilities]
+
+        # Select an individual based on the rank probabilities
+        selected_index = np.random.choice(len(population), p=normalized_rank_probabilities)
+        return population[selected_index]
+
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
+
+# this crossover method is just like single point of crossover
+def crossover(parent1, parent2, crossover_rate=0.5):
+    if len(parent1) != len(parent2):
+        raise ValueError("Both parents must have the same length")
+    try:
+        if random.random() < crossover_rate:
+            point = random.randint(1, len(parent1) - 1)
+            child1 = parent1[:point] + parent2[point:]
+            child2 = parent2[:point] + parent1[point:]
+            return child1, child2
+        return parent1, parent2
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
+
 # Fixed fitness function
 # Emphasizes the importance of fitness variance and adaptive fitness functions in evolutionary algorithms
 # Adaptive fitness function directly aligns with these principles by adapting to the average population fitness,
 # thereby managing variance and promoting better solutions over generations.
-def fitness(individual, objects, bin_volume):
+def fitness_bin_packing(individual, objects, bin_volume):
     bins: Dict[int, int] = defaultdict(int)
     for bin_number, object_volume in zip(individual, objects):
         bins[bin_number] += object_volume
@@ -158,75 +302,67 @@ def adaptive_fitness(individual, objects, bin_volume, avg_population_fitness):
     adaptive_score = fitness_score - avg_population_fitness
     return adaptive_score
 
-def genetic_algorithm(pop_size, num_genes, fitness_func, max_generations, mutation_rate, selection, use_aging):
-    start_CPU_time = time.process_time()
-    all_fitness_scores = []
-    all_generations = []
-    population = [[''.join(chr(random.randint(32, 126)) for _ in range(num_genes))] for _ in range(pop_size)]
-    ages = [random.random() for _ in range(pop_size)]
 
-    for generation in range(max_generations):
-        generation_CPU_start = time.process_time()
-        fitnesses = [fitness_func(individual[0]) for individual in population]
-        all_fitness_scores.append(fitnesses)
-        all_generations.append(generation)
+def genetic_algorithm_bin_packing(objects, bin_volume, population_size, max_generations, crossover_rate=0.3, mutation_rate=0.1, elites=0.1, use_aging=False):
+    try:
+        start_CPU_time = time.process_time()
+        population = create_initial_population(population_size, len(objects))
+        num_elites = int(population_size * elites)
+        ages = [random.random() for _ in range(population_size)]
 
-        avg = np.mean(fitnesses)
-        dev = np.std(fitnesses)
-        print(f"Generation {generation}: Average Fitness = {int(round(avg))}, Standard Deviation = {int(round(dev))}")
+        for generation in range(max_generations):
+            try:
+                fitnesses = [fitness_bin_packing(individual, objects, bin_volume) for individual in population]
+            except Exception as e:
+                print(f"Error in fitness function: {e}")
+                return None, None
 
-        elite_size = int(pop_size * 0.1)
-        elite_indices = sorted(range(pop_size), key=lambda i: fitnesses[i], reverse=True)[:elite_size]
-        elites = [population[i] for i in elite_indices]
+            if use_aging:
+                fitnesses = aging(population, fitnesses, ages)
 
-        offspring = []
-        if use_aging:
-            aging_fitnesses = aging(population, fitnesses, ages)
-            while len(offspring) < pop_size - elite_size:
-                if selection == "2":
-                    parent1, parent2 = rws_linear_scaling(population, aging_fitnesses)[0], rws_linear_scaling(population, aging_fitnesses)[0]
-                elif selection == "1":
-                    parent1, parent2 = sus(population, aging_fitnesses)[0], sus(population, aging_fitnesses)[0]
-                elif selection == "3":
-                    parent1, parent2 = tournament(population, aging_fitnesses), tournament(population, aging_fitnesses)
-                elif selection == "4":
-                    parent1, parent2 = rank(population, aging_fitnesses), rank(population, aging_fitnesses)
-                else:
-                    parent1, parent2 = random.choice(elites)[0], random.choice(elites)[0]
-                child = ''.join([parent1[i] if random.random() < 0.5 else parent2[i] for i in range(min(len(parent1), len(parent2)))])
-                child = mutate(child, mutation_rate)
-                offspring.append([child])
-        else:
-            while len(offspring) < pop_size - elite_size:
-                if selection == "2":
-                    parent1, parent2 = rws_linear_scaling(population, fitnesses)[0], rws_linear_scaling(population, fitnesses)[0]
-                elif selection == "1":
-                    parent1, parent2 = sus(population, fitnesses)[0], sus(population, fitnesses)[0]
-                elif selection == "3":
-                    parent1, parent2 = tournament(population, fitnesses), tournament(population, fitnesses)
-                elif selection == "4":
-                    parent1, parent2 = rank(population, fitnesses), rank(population, fitnesses)
-                else:
-                    parent1, parent2 = random.choice(elites)[0], random.choice(elites)[0]
-                child = ''.join([parent1[i] if random.random() < 0.5 else parent2[i] for i in range(min(len(parent1), len(parent2)))])
-                child = mutate(child, mutation_rate)
-                offspring.append([child])
-        population = elites + offspring
+            avg_population_fitness = sum(fitnesses) / len(fitnesses)
 
-        generation_CPU_end = time.process_time()
-        generation_CPU_ticks = generation_CPU_end - generation_CPU_start
-        generation_CPU_elapsed = generation_CPU_end - start_CPU_time
+            sorted_population = sorted(zip(population, fitnesses), key=lambda x: x[1])
+            elites = [individual for individual, _ in sorted_population[:num_elites]]
 
-        print(f"CPU Generation {generation}: Ticks Clock CPU = {generation_CPU_ticks} seconds, "
-              f"Total Elapsed = {generation_CPU_elapsed:.2f} seconds")
+            new_population = elites[:]
 
-    CPU_convergence = time.process_time() - start_CPU_time
-    print(f"CPU Time to convergence: {CPU_convergence:.2f} seconds")
+            # Using tournament and rank for better accurate result
+            try:
+                tournament = tournament_for_bin_packing(population, fitnesses)
+                rank = [rank_bin_packing(population, fitnesses) for _ in range(len(population) // 2)]
+            except Exception as e:
+                print(f"Error in selection functions: {e}")
+                return None, None
 
-    best_individual = max(population, key=lambda individual: fitness_func(individual[0]))
-    best_fitness = fitness_func(best_individual[0])
+            selected = tournament + rank
 
-    return best_individual[0], best_fitness, all_fitness_scores, all_generations
+            while len(new_population) < population_size:
+                parent1, parent2 = random.sample(selected, 2)
+                try:
+                    child1, child2 = crossover(parent1, parent2, crossover_rate)
+                    new_population.append(mutate_for_bin_packing(child1, mutation_rate))
+                    new_population.append(mutate_for_bin_packing(child2, mutation_rate))
+                except Exception as e:
+                    print(f"Error in crossover or mutation functions: {e}")
+                    return None, None
+
+            population = new_population[:population_size]
+            best_solution = min(population, key=lambda x: fitness_bin_packing(x, objects, bin_volume))
+            print(f'Generation {generation}, Best solution fitness: {fitness_bin_packing(best_solution, objects, bin_volume)}')
+
+        best_solution = min(population, key=lambda x: fitness_bin_packing(x, objects, bin_volume))
+        print('Best solution:', best_solution)
+        print('Number of bins used:', fitness_bin_packing(best_solution, objects, bin_volume))
+
+        CPU_convergence = time.process_time() - start_CPU_time
+        print(f"CPU Time to convergence: {CPU_convergence:.2f} seconds")
+
+        return best_solution, fitness_bin_packing(best_solution, objects, bin_volume)
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return None, None
+
 
 def mutate(individual, mutation_rate):
     individual = list(individual)
@@ -237,26 +373,21 @@ def mutate(individual, mutation_rate):
 
 
 def parse_input_file(filename):
-    with open(filename, 'r') as file:
-        lines = [line.strip() for line in file.readlines()]
+    with open(filename) as f:
+        lines = [line.strip() for line in f.readlines()]
 
-    num_problems = int(lines[0])
     problems = []
-    line_idx = 1
+    num_problems = int(lines[0])
+    idx = 1
 
     for _ in range(num_problems):
-        problem_id = lines[line_idx]
-        line_idx += 1
-        bin_capacity, num_items, _ = map(int, lines[line_idx].split())
-        line_idx += 1
-        items = [int(line) for line in lines[line_idx:line_idx + num_items]]
-        line_idx += num_items
-
-        problems.append({
-            'problem_id': problem_id,
-            'bin_capacity': bin_capacity,
-            'items': items
-        })
+        problem_id = lines[idx]
+        idx += 1
+        bin_capacity, num_items, _ = map(int, lines[idx].split())
+        idx += 1
+        items = [int(line) for line in lines[idx:idx + num_items]]
+        idx += num_items
+        problems.append({'problem_id': problem_id, 'bin_capacity': bin_capacity, 'items': items})
 
     return problems
 
@@ -319,10 +450,36 @@ def run_selected_genetic_algorithm():
     elif choice == '4':
         return
     elif choice == '5':
-        return main_run()
+        print("Do you with to use aging?")
+        set_aging = input("'y' for aging and 'n' for no aging: ")
+        if set_aging == 'y':
+            set_aging = True
+        else:
+            set_aging = False
 
-    print("Best individual:", ''.join(best_individual))
-    print("Best fitness:", best_fitness)
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        file_path = os.path.join(current_dir, 'binpack1.txt')
+
+        problems = parse_input_file(file_path)
+
+        for problem in problems[:5]:
+            objects = problem['items']
+            bins = problem['bin_capacity']
+
+            population_size = len(objects)
+            max_generations = bins
+            elites = 0.1
+
+            print(f"Running genetic algorithm for problem: {problem['problem_id']}")
+            best_solution, num_bins_used = genetic_algorithm_bin_packing(objects, bins, population_size,
+                                                                         max_generations, elites=elites, use_aging=set_aging)
+            print(f"Best solution for {problem['problem_id']} uses {num_bins_used} bins")
+
+    if choice == "5":
+        return
+    else:
+        print("Best individual:", ''.join(best_individual))
+        print("Best fitness:", best_fitness)
 
 if __name__ == "__main__":
     run_selected_genetic_algorithm()
