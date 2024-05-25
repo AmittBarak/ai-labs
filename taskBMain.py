@@ -6,12 +6,170 @@ import collections
 import os
 from typing import List, Dict, Tuple
 from collections import defaultdict
-from second_main import main_run
 
 
-def create_initial_population(population_size, num_objects):
-    population = [[random.randint(0, num_objects - 1) for _ in range(num_objects)] for _ in range(population_size) ]
-    return population
+def initialize_population(items, population_size):
+    try:
+        population = []
+        for _ in range(population_size):
+            try:
+                individual = list(np.random.permutation(items))
+                population.append(individual)
+            except (ValueError, TypeError):
+                print(f"Error: Unable to generate a valid individual from the provided items.")
+                continue
+        return population
+    except TypeError:
+        print("Error: The items parameter is not iterable or population_size is not an integer.")
+        return None
+
+
+def fitness(individual, bin_capacity):
+    """
+    Fixed Fitness function, how?
+    Consistency: The function evaluates the fitness of an individual using a consistent formula.
+    It calculates the number of bins required to pack all items without changing its criteria or formula based on
+    performance or any other feedback mechanism.
+
+    Non-Adaptive: The function does not adjust or adapt based on the performance of individuals during the
+    evolutionary process.
+    It always uses the same method to determine the number of bins required, regardless of how the
+    solutions evolve over time.
+    """
+    try:
+        bins = []
+        current_weight = 0
+
+        for item in individual:
+            try:
+                if current_weight + item <= bin_capacity:
+                    current_weight += item
+                else:
+                    bins.append(current_weight)
+                    current_weight = item
+            except TypeError:
+                print(f"Error: An item in the individual ({item}) is not a valid weight.")
+                return None
+
+        if current_weight > 0:
+            bins.append(current_weight)
+
+        return len(bins)
+    except TypeError:
+        print("Error: The individual or bin_capacity parameter is not of the correct type.")
+        return None
+
+
+def adaptive_fitness(individual, bin_capacity, recent_average_bins):
+    """
+    Self adaptive Fitness function, why?
+    This self-adapting fitness function because it dynamically adjusts based on recent average performance,
+    ensuring continuous improvement and responsiveness to the population's current state.
+    Its feedback mechanism rewards better solutions and penalizes worse ones, effectively guiding the algorithm toward
+    optimal solutions. This adaptability maintains a balance between exploration and exploitation,
+    preventing premature convergence. Additionally, it provides a holistic adjustment by incorporating overall
+    population trends, leading to a more robust and efficient optimization process.
+    """
+    try:
+        bins, current_weight = [], 0
+
+        try:
+            for item in individual:
+                if current_weight + item <= bin_capacity:
+                    current_weight += item
+                else:
+                    bins.append(current_weight)
+                    current_weight = item
+            if current_weight > 0:
+                bins.append(current_weight)
+        except TypeError:
+            print(f"Error: Invalid item weight {item} in individual.")
+            return None
+
+        num_bins = len(bins)
+        fitness_score = num_bins * (
+            0.9 if num_bins < recent_average_bins else 1.1 if num_bins > recent_average_bins else 1.0)
+
+        return fitness_score
+    except TypeError:
+        print("Error: The individual or bin_capacity parameter is not of the correct type.")
+        return None
+
+
+def selection(population, bin_capacity, population_size, adaptive=False, recent_average_bins=None):
+    if adaptive:
+        sorted_population = sorted(population, key=lambda x: adaptive_fitness(x, bin_capacity, recent_average_bins))
+    else:
+        sorted_population = sorted(population, key=lambda x: fitness(x, bin_capacity))
+    return sorted_population[:population_size // 2]
+
+# This is exectly like single
+def crossover(parent1, parent2):
+    crossover_point = random.randint(1, len(parent1) - 1)
+    child1 = parent1[:crossover_point] + parent2[crossover_point:]
+    child2 = parent2[:crossover_point] + parent1[crossover_point:]
+    return child1, child2
+
+
+def mutate_for_bin_packing(individual, mutation_rate):
+    if random.random() < mutation_rate:
+        idx1, idx2 = sorted(random.sample(range(len(individual)), 2))
+        individual[idx1], individual[idx2] = individual[idx2], individual[idx1]
+    return individual
+
+
+def genetic_algorithm_bin_packing(items, bin_capacity, population_size=100, generations=1000, mutation_rate=0.01,
+                                  adaptive=False):
+    start_time = time.process_time()
+    try:
+        population = initialize_population(items, population_size)
+        if population is None:
+            return None, None
+
+        recent_average_bins = None
+
+        for generation in range(generations):
+            if adaptive:
+                fitness_values = [fitness(ind, bin_capacity) for ind in population]
+                recent_average_bins = int(round(np.mean(fitness_values)))
+
+            try:
+                selected = selection(population, bin_capacity, population_size, adaptive, recent_average_bins)
+            except Exception as e:
+                print(f"Error in selection: {e}")
+                return None, None
+
+            next_population = selected.copy()
+
+            while len(next_population) < population_size:
+                try:
+                    parent1, parent2 = random.sample(selected, 2)
+                    child1, child2 = crossover(parent1, parent2)
+                    next_population.append(mutate_for_bin_packing(child1, mutation_rate))
+                    next_population.append(mutate_for_bin_packing(child2, mutation_rate))
+                except Exception as e:
+                    print(f"Error in crossover or mutation: {e}")
+                    continue
+
+            population = next_population
+
+        if adaptive:
+            best_individual = min(population, key=lambda x: adaptive_fitness(x, bin_capacity, recent_average_bins))
+            best_fitness = adaptive_fitness(best_individual, bin_capacity, recent_average_bins)
+        else:
+            best_individual = min(population, key=lambda x: fitness(x, bin_capacity))
+            best_fitness = fitness(best_individual, bin_capacity)
+
+        if best_fitness is None:
+            return None, None
+
+        end_time = time.process_time()
+
+        return best_individual, best_fitness
+    except Exception as e:
+        print(f"Error in genetic_algorithm_bin_packing: {e}")
+        return None, None
+
 
 def aging(population, fitnesses, age_distribution):
     """
@@ -207,12 +365,6 @@ def genetic_algorithm(pop_size, num_genes, fitness_func, max_generations, mutati
         print(f"An error occurred: {e}")
         return None, None, None, None
 
-def mutate_for_bin_packing(individual, mutation_rate=0.1):
-    if random.random() < mutation_rate:
-        mutation = random.randrange(len(individual))
-        individual[mutation] = random.randrange(len(individual))
-    return individual
-
 
 def tournament_for_bin_packing(population, fitnesses, k=3):
     if len(population) != len(fitnesses):
@@ -265,105 +417,6 @@ def rank_bin_packing(population, fitnesses):
         print(f"An error occurred: {e}")
 
 
-# this crossover method is just like single point of crossover
-def crossover(parent1, parent2, crossover_rate=0.5):
-    if len(parent1) != len(parent2):
-        raise ValueError("Both parents must have the same length")
-    try:
-        if random.random() < crossover_rate:
-            point = random.randint(1, len(parent1) - 1)
-            child1 = parent1[:point] + parent2[point:]
-            child2 = parent2[:point] + parent1[point:]
-            return child1, child2
-        return parent1, parent2
-    except Exception as e:
-        print(f"An error occurred: {e}")
-
-
-# Fixed fitness function
-# Emphasizes the importance of fitness variance and adaptive fitness functions in evolutionary algorithms
-# Adaptive fitness function directly aligns with these principles by adapting to the average population fitness,
-# thereby managing variance and promoting better solutions over generations.
-def fitness_bin_packing(individual, objects, bin_volume):
-    bins: Dict[int, int] = defaultdict(int)
-    for bin_number, object_volume in zip(individual, objects):
-        bins[bin_number] += object_volume
-
-    total_bins = len(bins)
-    overflow_penalty = sum(max(0, volume - bin_volume) for volume in bins.values()) * 100
-
-    return total_bins + overflow_penalty
-
-# Self-adaptive fitness functions
-# Adjust based on individual and population performance comparing against the average population fitness is a concrete
-# implementation of this concept there for suitable for dynamic and evolving problems.
-def adaptive_fitness(individual, objects, bin_volume, avg_population_fitness):
-    fitness_score = fitness(individual, objects, bin_volume)
-    adaptive_score = fitness_score - avg_population_fitness
-    return adaptive_score
-
-
-def genetic_algorithm_bin_packing(objects, bin_volume, population_size, max_generations, crossover_rate=0.3, mutation_rate=0.1, elites=0.1, use_aging=False):
-    try:
-        start_CPU_time = time.process_time()
-        population = create_initial_population(population_size, len(objects))
-        num_elites = int(population_size * elites)
-        ages = [random.random() for _ in range(population_size)]
-
-        for generation in range(max_generations):
-            try:
-                fitnesses = [fitness_bin_packing(individual, objects, bin_volume) for individual in population]
-            except Exception as e:
-                print(f"Error in fitness function: {e}")
-                return None, None
-
-            if use_aging:
-                fitnesses = aging(population, fitnesses, ages)
-
-            avg_population_fitness = sum(fitnesses) / len(fitnesses)
-
-            sorted_population = sorted(zip(population, fitnesses), key=lambda x: x[1])
-            elites = [individual for individual, _ in sorted_population[:num_elites]]
-
-            new_population = elites[:]
-
-            # Using tournament and rank for better accurate result
-            try:
-                tournament = tournament_for_bin_packing(population, fitnesses)
-                rank = [rank_bin_packing(population, fitnesses) for _ in range(len(population) // 2)]
-            except Exception as e:
-                print(f"Error in selection functions: {e}")
-                return None, None
-
-            selected = tournament + rank
-
-            while len(new_population) < population_size:
-                parent1, parent2 = random.sample(selected, 2)
-                try:
-                    child1, child2 = crossover(parent1, parent2, crossover_rate)
-                    new_population.append(mutate_for_bin_packing(child1, mutation_rate))
-                    new_population.append(mutate_for_bin_packing(child2, mutation_rate))
-                except Exception as e:
-                    print(f"Error in crossover or mutation functions: {e}")
-                    return None, None
-
-            population = new_population[:population_size]
-            best_solution = min(population, key=lambda x: fitness_bin_packing(x, objects, bin_volume))
-            print(f'Generation {generation}, Best solution fitness: {fitness_bin_packing(best_solution, objects, bin_volume)}')
-
-        best_solution = min(population, key=lambda x: fitness_bin_packing(x, objects, bin_volume))
-        print('Best solution:', best_solution)
-        print('Number of bins used:', fitness_bin_packing(best_solution, objects, bin_volume))
-
-        CPU_convergence = time.process_time() - start_CPU_time
-        print(f"CPU Time to convergence: {CPU_convergence:.2f} seconds")
-
-        return best_solution, fitness_bin_packing(best_solution, objects, bin_volume)
-    except Exception as e:
-        print(f"An error occurred: {e}")
-        return None, None
-
-
 def mutate(individual, mutation_rate):
     individual = list(individual)
     for i in range(len(individual)):
@@ -372,24 +425,62 @@ def mutate(individual, mutation_rate):
     return ''.join(individual)
 
 
-def parse_input_file(filename):
-    with open(filename) as f:
-        lines = [line.strip() for line in f.readlines()]
+def run_first_fit(filename):
+    start_time = time.time()
+    try:
+        problems = read_problems_from_file(filename)
+        bin_capacity = 150  # Assuming a fixed bin capacity as it is not provided in the file
 
-    problems = []
-    num_problems = int(lines[0])
-    idx = 1
+        results = []
+        for problem_id, items in list(problems.items())[:5]:  # Convert dictionary items to a list before slicing
+            num_bins = first_fit(bin_capacity, items)
+            results.append((problem_id, num_bins))
 
-    for _ in range(num_problems):
-        problem_id = lines[idx]
-        idx += 1
-        bin_capacity, num_items, _ = map(int, lines[idx].split())
-        idx += 1
-        items = [int(line) for line in lines[idx:idx + num_items]]
-        idx += num_items
-        problems.append({'problem_id': problem_id, 'bin_capacity': bin_capacity, 'items': items})
+            print(f"Problem ID: {problem_id}, Number of bins used: {num_bins}")
 
+        return results
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
+def first_fit(bin_capacity, items):
+    try:
+        bins = []
+
+        for item in items:
+            placed = False
+
+            for b in bins:
+                if b + item <= bin_capacity:
+                    bins[bins.index(b)] += item
+                    placed = True
+                    break
+
+            if not placed:
+                bins.append(item)
+        end_time = time.time()
+        return len(bins)
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
+
+def read_problems_from_file(file_path):
+    problems = {}
+    with open(file_path, 'r') as file:
+        lines = file.readlines()
+        current_problem = None
+        for line in lines:
+            line = line.strip()
+            if line.startswith('u'):
+                current_problem = line
+                problems[current_problem] = []
+            elif current_problem is not None:
+                try:
+                    item = int(line)
+                    problems[current_problem].append(item)
+                except ValueError:
+                    pass
     return problems
+
 
 
 def run_selected_genetic_algorithm():
@@ -399,6 +490,7 @@ def run_selected_genetic_algorithm():
     print("3. aging with option of SUS/RWS/TOURNAMENT/RANK")
     print("4. Sudoku solver")
     print("5. Bin packing")
+    print("6. Bin packing with First Fit algorithm")
     print("0. Quit")
 
     choice = input("Enter your choice (0, 1, 2, 3, 4, 5): ")
@@ -450,32 +542,38 @@ def run_selected_genetic_algorithm():
     elif choice == '4':
         return
     elif choice == '5':
-        print("Do you with to use aging?")
-        set_aging = input("'y' for aging and 'n' for no aging: ")
-        if set_aging == 'y':
-            set_aging = True
+        print("Do you wish to use adaptive fitness and not the fixed fitness?")
+        adaptive = input("'y' for adaptive fitness and 'n' for no adaptive fitness: ")
+
+        if adaptive == "y":
+            adaptive = True
         else:
-            set_aging = False
+            adaptive = False
 
         current_dir = os.path.dirname(os.path.abspath(__file__))
         file_path = os.path.join(current_dir, 'binpack1.txt')
 
-        problems = parse_input_file(file_path)
+        problems = read_problems_from_file(file_path)
 
-        for problem in problems[:5]:
-            objects = problem['items']
-            bins = problem['bin_capacity']
+        for problem_id, items in list(problems.items())[:5]:
+            bin_capacity = 150
 
-            population_size = len(objects)
-            max_generations = bins
-            elites = 0.1
+            population_size = 100
+            max_generations = 1000
+            mutation_rate = 0.01
 
-            print(f"Running genetic algorithm for problem: {problem['problem_id']}")
-            best_solution, num_bins_used = genetic_algorithm_bin_packing(objects, bins, population_size,
-                                                                         max_generations, elites=elites, use_aging=set_aging)
-            print(f"Best solution for {problem['problem_id']} uses {num_bins_used} bins")
+            print(f"Running genetic algorithm for problem: {problem_id}")
+            best_solution, num_bins_used = genetic_algorithm_bin_packing(items, bin_capacity, population_size,
+                                                                         max_generations, mutation_rate, adaptive)
+            print(f"Best solution for {problem_id} uses {num_bins_used} bins")
 
-    if choice == "5":
+    elif choice == '6':
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        file_path = os.path.join(current_dir, 'binpack1.txt')
+
+        run_first_fit(file_path)
+
+    if choice == "5" or choice == "6":
         return
     else:
         print("Best individual:", ''.join(best_individual))
