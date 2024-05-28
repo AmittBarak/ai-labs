@@ -1,6 +1,7 @@
 import random
 
 
+
 def genes_generator(given_grid: list[list[int]]) -> list[int]:
     """
     Create an individual Sudoku grid by filling in the empty cells randomly (create the genes).
@@ -23,6 +24,6 @@ def genes_generator(given_grid: list[list[int]]) -> list[int]:
                 individual[row][col] = missing_numbers[index]
                 index += 1
 
-    # to 1-dim array
+    # Flatten the 2D grid to a 1D array
     individual = [num for row in individual for num in row]
     return individual

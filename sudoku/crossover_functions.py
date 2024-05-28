@@ -1,4 +1,5 @@
 import random
+import numpy as np
 
 
 def sudoku_partially_matched_crossover(parent1, parent2):
@@ -37,20 +38,14 @@ def sudoku_partially_matched_crossover(parent1, parent2):
     return pmx(parent1, parent2)
 
 
-# #example
-# parent1 = [8, 2, 4, 3, 7, 5, 1, 0, 9, 6]
-# parent2 = [4, 1, 7, 6, 2, 8, 3, 9, 5, 0]
-# child1, child2 = sudoku_partially_matched_crossover(parent1, parent2)
-# print('child1:', child1)
-# print('child2:', child2)
-
 def cycle_crossover(parent1, parent2):
+    if sorted(parent1) != sorted(parent2):
+        raise ValueError("Parents are not permutations of the same set of elements, parent1: {}, parent2: {}".format(parent1, parent2))
+
     child1, child2 = [-1] * len(parent1), [-1] * len(parent2)
     cycle_index = 0
     cycle_count = 0
     visited_indices = set()
-    print('parent1:', parent1)
-    print('parent2:', parent2)
     while len(visited_indices) < len(parent1):
 
         if cycle_index in visited_indices:
@@ -62,36 +57,47 @@ def cycle_crossover(parent1, parent2):
         cycle = []
         start_idx = cycle_index
         while start_idx not in cycle:
-            print(f'start_idx: {start_idx} parent1[start_idx]: {parent1[start_idx]} parent2[start_idx]: {parent2[start_idx]}')
+            if start_idx < 0:
+                break
+
             cycle.append(start_idx)
             start_idx = parent2.index(parent1[start_idx])
 
-            # Copy cycle from parent1 to child1 and from parent2 to child2 if its event index cycle (cycle_0, cycle_2..)
-            if cycle_count % 2 == 0:
-                for i, idx in enumerate(cycle):
-                    child1[idx] = parent1[idx]
-                    child2[idx] = parent2[idx]
-            else:
-                for i, idx in enumerate(cycle):
-                    child1[idx] = parent2[idx]
-                    child2[idx] = parent1[idx]
+        # Copy cycle from parent1 to child1 and from parent2 to child2 if its even index cycle (cycle_0, cycle_2..)
+        if cycle_count % 2 == 0:
+            for idx in cycle:
+                child1[idx] = parent1[idx]
+                child2[idx] = parent2[idx]
+        else:
+            for idx in cycle:
+                child1[idx] = parent2[idx]
+                child2[idx] = parent1[idx]
 
         # Update visited indices
         visited_indices.update(cycle)
-        cycle_count = +1
+        cycle_count += 1
         cycle_index = next((i for i in range(len(parent1)) if i not in visited_indices), None)
 
     return child1, child2
 
 
+
+# The cycle_crossover_2d function
 def cycle_crossover_2d(parent1, parent2):
-    child1, child2 = [], []
-    for i in range(len(parent1)):
-        child1_row, child2_row = cycle_crossover(parent1[i], parent2[i])
-        print('child1_row:', child1_row)
-        print('child2_row:', child2_row)
-        child1.append(child1_row)
-        child2.append(child2_row)
-    child1 = [gene for row in child1 for gene in row]
-    child2 = [gene for row in child2 for gene in row]
+
+    # Reshape 1D parents into 2D grids
+    parent1_2d = np.array(parent1).reshape((9, 9))
+    parent2_2d = np.array(parent2).reshape((9, 9))
+
+    child1_2d, child2_2d = [], []
+
+    for i in range(9):  # Assuming a 9x9 Sudoku grid
+        child1_row, child2_row = cycle_crossover(list(parent1_2d[i]), list(parent2_2d[i]))
+        child1_2d.append(child1_row)
+        child2_2d.append(child2_row)
+
+    # Flatten the resulting 2D child grids back to 1D arrays
+    child1 = [gene for row in child1_2d for gene in row]
+    child2 = [gene for row in child2_2d for gene in row]
+
     return child1, child2

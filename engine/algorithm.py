@@ -9,13 +9,11 @@ import numpy as np
 from engine.selection import sus, rws_linear_scaling, tournament, rank
 from engine.utils import aging
 
-
 class SelectionMethod(Enum):
     SUS = 1
     RWS = 2
     TOURNAMENT = 3
     RANK = 4
-
 
 @dataclasses.dataclass
 class GeneticConfig:
@@ -27,7 +25,6 @@ class GeneticConfig:
     mutation_rate: float
     selection: SelectionMethod
     elite_size: float = 0.1
-
 
 class GeneticEngine(abc.ABC):
     """Genetic algorithm engine."""
@@ -68,6 +65,12 @@ class GeneticEngine(abc.ABC):
         # Generate the initial
         population = [self.individual_generator() for _ in range(self.population_size)]
 
+        # Check population sizes
+        for individual in population:
+            if len(individual) != self.num_genes:
+                print(f"Error: Individual size mismatch. Expected {self.num_genes}, got {len(individual)}")
+                return
+
         # Run the genetic algorithm
         for generation in range(self.max_generations):
             print(f"Generation {generation}")
@@ -98,22 +101,35 @@ class GeneticEngine(abc.ABC):
             # Store the elite individuals
             offspring = []
             elites = [population[i] for i in elite_indices]
-
             if self.use_aging:
                 population_fitness = aging(population_fitness, ages)
 
             while len(offspring) < self.population_size - elite_size:
                 parent1, parent2 = self.get_parents(population, population_fitness)
+                child1, child2 = self.crossover(parent1, parent2)
+                # validate that we got a permutation
+                if sorted(child1) != sorted(parent1) or sorted(child2) != sorted(parent2):
+                    print(f"Error: Crossover did not produce a permutation.")
+                    return
+                if len(child1) != self.num_genes or len(child2) != self.num_genes:
+                    print(f"Error: Crossover resulted in incorrect child size.")
+                    return
 
-                print("Start Crossover")
-                child = self.crossover(parent1, parent2)
+                child1 = self.mutate(child1)
+                child2 = self.mutate(child2)
+                # validate that we got a permutation
+                if sorted(child1) != sorted(parent1) or sorted(child2) != sorted(parent2):
+                    print(f"Error: Mutate did not produce a permutation.")
+                    return
+                if len(child1) != self.num_genes or len(child2) != self.num_genes:
+                    print(f"Error: Mutation resulted in incorrect child size.")
+                    return
 
-                print("Start Mutation")
-                child = self.mutate(child)
-                offspring.append(child)
+                offspring.append(child1)
+                offspring.append(child2)
 
             print("New population")
-            population = elites + offspring
+            population = elites + offspring[:self.population_size - elite_size]
 
             # Increment the ages of the population
             generation_cpu_end = time.process_time()
