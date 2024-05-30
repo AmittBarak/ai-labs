@@ -1,13 +1,14 @@
-import abc
 import dataclasses
 import random
 import time
+import typing
 from enum import Enum
 
 import numpy as np
 
 from engine.selection import sus, rws_linear_scaling, tournament, rank
-from engine.utils import aging
+from sudoku.utils import aging, print_pretty_grid
+
 
 class SelectionMethod(Enum):
     SUS = 1
@@ -15,8 +16,9 @@ class SelectionMethod(Enum):
     TOURNAMENT = 3
     RANK = 4
 
+
 @dataclasses.dataclass
-class GeneticConfig:
+class GeneticSettings:
     """Configuration for the genetic algorithm."""
     use_aging: bool
     genes_count: int
@@ -25,139 +27,128 @@ class GeneticConfig:
     mutation_rate: float
     selection: SelectionMethod
     elite_size: float = 0.1
+    mutation_generator: typing.Callable[[any], any] = None
+    crossover_generator: typing.Callable[[any, any], any] = None
+    fitness_calculator: typing.Callable[[any], float] = None
+    individual_generator: typing.Callable[[], any] = None
 
-class GeneticEngine(abc.ABC):
-    """Genetic algorithm engine."""
 
-    def __init__(self, config: GeneticConfig):
-        self.population_size = config.population_size
-        self.num_genes = config.genes_count
-        self.max_generations = config.max_generations
-        self.mutation_rate = config.mutation_rate
-        self.selection = config.selection
-        self.use_aging = config.use_aging
-        self.elite_size = config.elite_size
+def run_genetic_algorithm(settings: GeneticSettings):
+    all_generations = []
+    all_fitness_scores = []
+    start_cpu_time = time.process_time()
 
-    @abc.abstractmethod
-    def calculate_fitness(self, individual):
-        pass
+    # Initialize the ages of the population
+    ages = [random.random() for _ in range(settings.population_size)]
 
-    @abc.abstractmethod
-    def individual_generator(self):
-        pass
+    # Generate the initial
+    population = [settings.individual_generator() for _ in range(settings.population_size)]
 
-    @abc.abstractmethod
-    def crossover(self, parent1, parent2):
-        pass
+    # Check population sizes
+    for individual in population:
+        if len(individual) != settings.genes_count:
+            print(f"Error: Individual size mismatch. Expected {settings.genes_count}, got {len(individual)}")
+            return
 
-    @abc.abstractmethod
-    def mutate(self, individual):
-        pass
+    # Run the genetic algorithm
+    for generation in range(settings.max_generations):
+        print(f"Generation {generation}")
+        generation_cpu_start = time.process_time()
 
-    def run_genetic_algorithm(self):
-        all_generations = []
-        all_fitness_scores = []
-        start_cpu_time = time.process_time()
+        # Calculate the fitness of the population
+        population_fitness = [settings.fitness_calculator(individual) for individual in population]
 
-        # Initialize the ages of the population
-        ages = [random.random() for _ in range(self.population_size)]
+        # Store the fitness scores and generation number
+        all_fitness_scores.append(population_fitness)
+        all_generations.append(generation)
 
-        # Generate the initial
-        population = [self.individual_generator() for _ in range(self.population_size)]
+        # Print the average fitness and standard deviation of the population
+        avg = np.mean(population_fitness)
+        dev = np.std(population_fitness)
 
-        # Check population sizes
-        for individual in population:
-            if len(individual) != self.num_genes:
-                print(f"Error: Individual size mismatch. Expected {self.num_genes}, got {len(individual)}")
+        # Print the best individual every 10 generations
+        if generation % 10 == 0:
+            best_individual = max(population, key=lambda i: settings.fitness_calculator(i))
+            print_pretty_grid(best_individual)
+
+        print(f"Generation {generation}")
+        print(f"Best Fitness = {max(population_fitness)}")
+        print(f"Worst Fitness = {min(population_fitness)}")
+        print(f"Standard Deviation = {dev}")
+        print(f"Average Fitness = {avg}")
+
+        # Check for convergence
+        elite_size = int(settings.population_size * settings.elite_size)
+        elite_indices = sorted(
+            range(settings.population_size), key=lambda i: population_fitness[i], reverse=True
+        )[:elite_size]
+
+        # Store the elite individuals
+        offspring = []
+        elites = [population[i] for i in elite_indices]
+        if settings.use_aging:
+            population_fitness = aging(population_fitness, ages)
+
+        while len(offspring) < settings.population_size - elite_size:
+            parent1, parent2 = get_parents(settings.selection, population, population_fitness)
+            child1, child2 = settings.crossover_generator(parent1, parent2)
+
+            # validate that we got a permutation
+            if sorted(child1) != sorted(parent1) or sorted(child2) != sorted(parent2):
+                print(f"Error: Crossover did not produce a permutation.")
                 return
 
-        # Run the genetic algorithm
-        for generation in range(self.max_generations):
-            print(f"Generation {generation}")
-            generation_cpu_start = time.process_time()
+            if len(child1) != settings.genes_count or len(child2) != settings.genes_count:
+                print(f"Error: Crossover resulted in incorrect child size.")
+                return
 
-            # Calculate the fitness of the population
-            population_fitness = [self.calculate_fitness(individual) for individual in population]
+            if random.random() < settings.mutation_rate:
+                child1 = settings.mutation_generator(child1)
+                child2 = settings.mutation_generator(child2)
 
-            # Store the fitness scores and generation number
-            all_fitness_scores.append(population_fitness)
-            all_generations.append(generation)
+            # validate that we got a permutation
+            if sorted(child1) != sorted(parent1) or sorted(child2) != sorted(parent2):
+                print(f"Error: Mutate did not produce a permutation.")
+                return
 
-            # Print the average fitness and standard deviation of the population
-            avg = np.mean(population_fitness)
-            dev = np.std(population_fitness)
-            print(f"Generation {generation}")
-            print(f"Best Fitness = {max(population_fitness)}")
-            print(f"Worst Fitness = {min(population_fitness)}")
-            print(f"Standard Deviation = {dev}")
-            print(f"Average Fitness = {avg}")
+            if len(child1) != settings.genes_count or len(child2) != settings.genes_count:
+                print(f"Error: Mutation resulted in incorrect child size.")
+                return
 
-            # Check for convergence
-            elite_size = int(self.population_size * self.elite_size)
-            elite_indices = sorted(
-                range(self.population_size), key=lambda i: population_fitness[i], reverse=True
-            )[:elite_size]
+            offspring.append(child1)
+            offspring.append(child2)
 
-            # Store the elite individuals
-            offspring = []
-            elites = [population[i] for i in elite_indices]
-            if self.use_aging:
-                population_fitness = aging(population_fitness, ages)
+        population = elites + offspring[:settings.population_size - elite_size]
 
-            while len(offspring) < self.population_size - elite_size:
-                parent1, parent2 = self.get_parents(population, population_fitness)
-                child1, child2 = self.crossover(parent1, parent2)
-                # validate that we got a permutation
-                if sorted(child1) != sorted(parent1) or sorted(child2) != sorted(parent2):
-                    print(f"Error: Crossover did not produce a permutation.")
-                    return
-                if len(child1) != self.num_genes or len(child2) != self.num_genes:
-                    print(f"Error: Crossover resulted in incorrect child size.")
-                    return
+        # Increment the ages of the population
+        generation_cpu_end = time.process_time()
+        generation_cpu_ticks = generation_cpu_end - generation_cpu_start
+        generation_cpu_elapsed = generation_cpu_end - start_cpu_time
 
-                child1 = self.mutate(child1)
-                child2 = self.mutate(child2)
-                # validate that we got a permutation
-                if sorted(child1) != sorted(parent1) or sorted(child2) != sorted(parent2):
-                    print(f"Error: Mutate did not produce a permutation.")
-                    return
-                if len(child1) != self.num_genes or len(child2) != self.num_genes:
-                    print(f"Error: Mutation resulted in incorrect child size.")
-                    return
+        print(f"cpu Generation {generation}: Ticks Clock cpu = {generation_cpu_ticks} seconds, "
+              f"Total Elapsed = {generation_cpu_elapsed:.2f} seconds")
 
-                offspring.append(child1)
-                offspring.append(child2)
+    cpu_convergence = time.process_time() - start_cpu_time
+    print(f"cpu Time to convergence: {cpu_convergence:.2f} seconds")
 
-            print("New population")
-            population = elites + offspring[:self.population_size - elite_size]
+    best_individual = max(population, key=lambda i: settings.fitness_calculator(i))
+    best_fitness = settings.fitness_calculator(best_individual)
+    return best_individual, best_fitness, all_fitness_scores, all_generations
 
-            # Increment the ages of the population
-            generation_cpu_end = time.process_time()
-            generation_cpu_ticks = generation_cpu_end - generation_cpu_start
-            generation_cpu_elapsed = generation_cpu_end - start_cpu_time
 
-            print(f"cpu Generation {generation}: Ticks Clock cpu = {generation_cpu_ticks} seconds, "
-                  f"Total Elapsed = {generation_cpu_elapsed:.2f} seconds")
+def get_parents(selection, population, population_fitness):
+    choices: dict[SelectionMethod, callable] = {
+        SelectionMethod.SUS: sus,
+        SelectionMethod.RWS: rws_linear_scaling,
+        SelectionMethod.TOURNAMENT: tournament,
+        SelectionMethod.RANK: rank
+    }
 
-        cpu_convergence = time.process_time() - start_cpu_time
-        print(f"cpu Time to convergence: {cpu_convergence:.2f} seconds")
+    if selection not in choices:
+        parent1 = random.choice(population)
+        parent2 = random.choice(population)
 
-        best_individual = max(population, key=lambda individual: self.calculate_fitness(individual))
-        best_fitness = self.calculate_fitness(best_individual)
-        return best_individual, best_fitness, all_fitness_scores, all_generations
-
-    def get_parents(self, population, population_fitness):
-        choices: dict[SelectionMethod, callable] = {
-            SelectionMethod.SUS: sus,
-            SelectionMethod.RWS: rws_linear_scaling,
-            SelectionMethod.TOURNAMENT: tournament,
-            SelectionMethod.RANK: rank
-        }
-
-        if self.selection not in choices:
-            parent1 = random.choice(population)
-            parent2 = random.choice(population)
-        else:
-            parent1 = choices[self.selection](population, population_fitness)
-            parent2 = choices[self.selection](population, population_fitness)
-        return parent1, parent2
+    else:
+        parent1 = choices[selection](population, population_fitness)
+        parent2 = choices[selection](population, population_fitness)
+    return parent1, parent2

@@ -6,6 +6,7 @@ import collections
 import os
 from typing import List, Dict, Tuple
 from collections import defaultdict
+from sudoku import solver as sudoku_solver
 
 
 def initialize_population(items, population_size):
@@ -540,7 +541,8 @@ def run_selected_genetic_algorithm():
                                                                                                mutation_rate, selection,
                                                                                                use_aging)
     elif choice == '4':
-        return
+        sudoku_solver.solve()
+
     elif choice == '5':
         print("Do you wish to use adaptive fitness and not the fixed fitness?")
         adaptive = input("'y' for adaptive fitness and 'n' for no adaptive fitness: ")

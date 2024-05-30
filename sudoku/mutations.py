@@ -15,8 +15,6 @@ def scramble_mutation(individual: [int]):
     individual = list(individual)
     start, end = sorted(random.sample(range(len(individual)), 2))
     random.shuffle(individual[start:end + 1])
-    # to 1d
-    individual = [num for row in individual for num in row]
     return individual
 
 
@@ -32,9 +30,9 @@ def swap_mutation(individual):
         The mutated individual.
     """
     individual = list(individual)
-    idx1, idx2 = random.sample(range(len(individual)), 2)
-    individual[idx1], individual[idx2] = individual[idx2], individual[idx1]
-    return ''.join(individual)
+    start, end = sorted(random.sample(range(len(individual)), 2))
+    individual[start], individual[end] = individual[end], individual[start]
+    return individual
 
 
 def invert_mutation_generator(game_grid):

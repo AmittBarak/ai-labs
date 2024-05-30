@@ -1,71 +1,34 @@
-""" This module contains the solver function for the sudoku puzzle
-    todo write solver function for all the sudoku puzzles in here https://sandiway.arizona.edu/sudoku/examples.html
-"""
-games = [
-    [
-        [0, 0, 0, 2, 6, 0, 7, 0, 1],
-        [6, 8, 0, 0, 7, 0, 0, 9, 0],
-        [1, 9, 0, 0, 0, 4, 5, 0, 0],
-        [8, 2, 0, 1, 0, 0, 0, 4, 0],
-        [0, 0, 4, 6, 0, 2, 9, 0, 0],
-        [0, 5, 0, 0, 0, 3, 0, 2, 8],
-        [0, 0, 9, 3, 0, 0, 0, 7, 4],
-        [0, 4, 0, 0, 5, 0, 0, 3, 6],
-        [7, 0, 3, 0, 1, 8, 0, 0, 0]
-    ],
-    [
-        [1, 0, 0, 4, 8, 9, 0, 0, 6],
-        [7, 3, 0, 0, 0, 0, 0, 4, 0],
-        [0, 0, 0, 0, 0, 1, 2, 9, 5],
-        [0, 0, 7, 1, 2, 0, 6, 0, 0],
-        [5, 0, 0, 7, 0, 3, 0, 0, 8],
-        [0, 0, 6, 0, 9, 5, 7, 0, 0],
-        [9, 1, 4, 6, 0, 0, 0, 0, 0],
-        [0, 2, 0, 0, 0, 0, 0, 3, 7],
-        [8, 0, 0, 5, 1, 2, 0, 0, 4]
-    ],
-    [
-        [0, 2, 0, 6, 0, 8, 0, 0, 0],
-        [5, 8, 0, 0, 0, 9, 7, 0, 0],
-        [0, 0, 0, 0, 4, 0, 0, 0, 0],
-        [3, 7, 0, 0, 0, 0, 5, 0, 0],
-        [6, 0, 0, 0, 0, 0, 0, 0, 4],
-        [0, 0, 8, 0, 0, 0, 0, 1, 3],
-        [0, 0, 0, 0, 2, 0, 0, 0, 0],
-        [0, 0, 9, 8, 0, 0, 0, 3, 6],
-        [0, 0, 0, 3, 0, 6, 0, 9, 0],
-    ],
-    [
-        [0, 0, 0, 6, 0, 0, 4, 0, 0],
-        [7, 0, 0, 0, 0, 3, 6, 0, 0],
-        [0, 0, 0, 0, 9, 1, 0, 8, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 5, 0, 1, 8, 0, 0, 0, 3],
-        [0, 0, 0, 3, 0, 6, 0, 4, 5],
-        [0, 4, 0, 2, 0, 0, 0, 6, 0],
-        [9, 0, 3, 0, 0, 0, 0, 0, 0],
-        [0, 2, 0, 0, 0, 0, 1, 0, 0]
-    ],
-    [
-        [2, 0, 0, 3, 0, 0, 0, 0, 0],
-        [8, 0, 4, 0, 6, 2, 0, 0, 3],
-        [0, 1, 3, 8, 0, 0, 2, 0, 0],
-        [0, 0, 0, 0, 2, 0, 3, 9, 0],
-        [5, 0, 7, 0, 0, 0, 6, 2, 1],
-        [0, 3, 2, 0, 0, 6, 0, 0, 0],
-        [0, 2, 0, 0, 0, 9, 1, 4, 0],
-        [6, 0, 1, 2, 5, 0, 8, 0, 9],
-        [0, 0, 0, 0, 0, 1, 0, 0, 2]
-    ],
-    [
-        [0, 2, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 6, 0, 0, 0, 0, 3],
-        [0, 7, 4, 0, 8, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 3, 0, 0, 2],
-        [0, 8, 0, 0, 4, 0, 0, 1, 0],
-        [6, 0, 0, 5, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 1, 0, 7, 8, 0],
-        [5, 0, 0, 0, 0, 9, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 4, 0]
-    ]
-]
+from engine.algorithm import GeneticSettings, SelectionMethod, run_genetic_algorithm
+from sudoku.utils import print_pretty_grid
+from sudoku.crossover import cycle_crossover_2d
+from sudoku.fitness import calculate_sudoku_fitness
+from sudoku.genes import genes_generator
+from sudoku.mutations import scramble_mutation
+from sudoku.dataset import games
+
+
+def solve():
+    solutions = []
+    for game in games:
+        chosen_game = game
+        # Run the genetic algorithm
+        best_individual, best_fitness, all_fitness_scores, all_generations = run_genetic_algorithm(
+            # 435/498
+            GeneticSettings(
+                population_size=300,
+                genes_count=81,
+                elite_size=0.3,
+                max_generations=200,
+                mutation_rate=0.1,
+                selection=SelectionMethod.RANK,
+                use_aging=False,
+                crossover_generator=cycle_crossover_2d,
+                mutation_generator=scramble_mutation,
+                fitness_calculator=calculate_sudoku_fitness(chosen_game),
+                individual_generator=genes_generator(chosen_game),  # todo: runner interface
+            ),
+        )
+        solutions.append(best_individual)
+    for solution, i in zip(solutions, range(1, len(solutions) + 1)):
+        print(f"Solution {i}")
+        print_pretty_grid(solution)

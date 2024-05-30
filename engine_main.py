@@ -1,46 +1,60 @@
-from engine.algorithm import GeneticEngine, GeneticConfig, SelectionMethod
-from engine.utils import pretty_grid
-from sudoku.crossover_functions import cycle_crossover, cycle_crossover_2d
-from sudoku.fitness import sudoku_fitness_generator
+from engine.algorithm import GeneticSettings, SelectionMethod, run_genetic_algorithm
+from sudoku.utils import print_pretty_grid
+from sudoku.crossover import cycle_crossover_2d
+from sudoku.fitness import calculate_sudoku_fitness
 from sudoku.genes import genes_generator
-from sudoku.mutations import scramble_mutation, invert_mutation_generator
-from sudoku.solver import games
+from sudoku.mutations import invert_mutation_generator, swap_mutation, scramble_mutation
+from sudoku.dataset import games
 
+chosen_game = games[0]
 
-class SudokuGeneticEngine(GeneticEngine):
-    def __init__(self, config: GeneticConfig, game_grid: [[int]], mutation_generator: callable,
-                 crossover_generator: callable):
-        super().__init__(config)
-        self.game_grid = game_grid
-        self.mutation_generator = mutation_generator
-        self.crossover_generator = crossover_generator
-
-    def calculate_fitness(self, individual):
-        return sudoku_fitness_generator(self.game_grid)(individual)
-
-    def individual_generator(self):
-        return genes_generator(self.game_grid)
-
-    def crossover(self, parent1, parent2):
-        return self.crossover_generator(parent1, parent2)
-
-    def mutate(self, individual):
-        return self.mutation_generator(self.game_grid)(individual)
-
-
-sudoku_solver = SudokuGeneticEngine(
-    GeneticConfig(
-        population_size=100,
+# Run the genetic algorithm
+best_individual, best_fitness, all_fitness_scores, all_generations = run_genetic_algorithm(
+    # 435/498
+    GeneticSettings(
+        population_size=300,
         genes_count=81,
-        max_generations=1000,
-        mutation_rate=0.01,
+        elite_size=0.3,
+        max_generations=200,
+        mutation_rate=0.1,
         selection=SelectionMethod.RANK,
-        use_aging=False
+        use_aging=False,
+        crossover_generator=cycle_crossover_2d,
+        mutation_generator=scramble_mutation,
+        fitness_calculator=calculate_sudoku_fitness(chosen_game),
+        individual_generator=genes_generator(chosen_game),  # todo: runner interface
     ),
-    game_grid=games[0],
-    crossover_generator=cycle_crossover_2d,
-    mutation_generator=invert_mutation_generator
 )
 
-best_individual, best_fitness, all_fitness_scores, all_generations = sudoku_solver.run_genetic_algorithm()
-pretty_grid(best_individual)
+print_pretty_grid(best_individual)
+
+# 435/498
+# GeneticSettings(
+#     population_size=300,
+#     genes_count=81,
+#     elite_size=0.3,
+#     max_generations=200,
+#     mutation_rate=0.1,
+#     selection=SelectionMethod.RANK,
+#     use_aging=False,
+#     crossover_generator=cycle_crossover_2d,
+#     mutation_generator=invert_mutation_generator(chosen_game),
+#     fitness_calculator=calculate_sudoku_fitness(chosen_game),
+#     individual_generator=genes_generator(chosen_game), # todo: runner interface
+# ),
+
+
+# 399/498
+# GeneticSettings(
+#     population_size=300,
+#     genes_count=81,
+#     elite_size=0.3,
+#     max_generations=200,
+#     mutation_rate=0.1,
+#     selection=SelectionMethod.RANK,
+#     use_aging=False,
+#     crossover_generator=cycle_crossover_2d,
+#     mutation_generator=invert_mutation_generator(chosen_game),
+#     fitness_calculator=calculate_sudoku_fitness(chosen_game),
+#     individual_generator=genes_generator(chosen_game),  # todo: runner interface
+# ),

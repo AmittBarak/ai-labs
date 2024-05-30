@@ -40,7 +40,9 @@ def sudoku_partially_matched_crossover(parent1, parent2):
 
 def cycle_crossover(parent1, parent2):
     if sorted(parent1) != sorted(parent2):
-        raise ValueError("Parents are not permutations of the same set of elements, parent1: {}, parent2: {}".format(parent1, parent2))
+        raise ValueError(
+            "Parents are not permutations of the same set of elements, parent1: {}, parent2: {}".format(parent1,
+                                                                                                        parent2))
 
     child1, child2 = [-1] * len(parent1), [-1] * len(parent2)
     cycle_index = 0
@@ -81,10 +83,8 @@ def cycle_crossover(parent1, parent2):
     return child1, child2
 
 
-
 # The cycle_crossover_2d function
 def cycle_crossover_2d(parent1, parent2):
-
     # Reshape 1D parents into 2D grids
     parent1_2d = np.array(parent1).reshape((9, 9))
     parent2_2d = np.array(parent2).reshape((9, 9))
@@ -101,3 +101,13 @@ def cycle_crossover_2d(parent1, parent2):
     child2 = [gene for row in child2_2d for gene in row]
 
     return child1, child2
+
+
+if __name__ == '__main__':
+    parent1 = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+    parent2 = [9, 3, 7, 8, 2, 6, 5, 1, 4]
+
+    child1, child2 = sudoku_partially_matched_crossover(parent1, parent2)
+    print("Parent 1:", parent1)
+    print("Parent 2:", parent2)
+    print("Child 1:", child1)

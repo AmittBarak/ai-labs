@@ -14,7 +14,7 @@ def aging(population_fitness, age_distribution):
             for age, fitness in zip(age_distribution, population_fitness)]
 
 
-def pretty_grid(game_grid: [int]):
+def print_pretty_grid(game_grid: [int]):
     """
     Pretty prints a Sudoku grid.
     """
