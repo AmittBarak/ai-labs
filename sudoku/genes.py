@@ -4,7 +4,7 @@ import typing
 from sudoku.utils import print_pretty_grid
 
 
-def genes_generator(given_grid: list[list[int]]) -> typing.Callable[[], list[int]]:
+def individual_generator(given_grid: list[list[int]]) -> typing.Callable[[int], any]:
     """
     Create an individual Sudoku grid by filling in the empty cells randomly (create the genes).
 
@@ -15,7 +15,7 @@ def genes_generator(given_grid: list[list[int]]) -> typing.Callable[[], list[int
     list: A Sudoku grid with random numbers in the empty cells.
     """
 
-    def generator() -> list[int]:
+    def generator(num_genes: int) -> any:
         individual = [row[:] for row in given_grid]  # Create a copy of the given grid
 
         for row in range(9):
@@ -37,7 +37,7 @@ def genes_generator(given_grid: list[list[int]]) -> typing.Callable[[], list[int
 
 if __name__ == '__main__':
     print_pretty_grid(
-        genes_generator(
+        individual_generator(
             [
                 [0, 0, 0, 2, 6, 0, 7, 0, 1],
                 [6, 8, 0, 0, 7, 0, 0, 9, 0],

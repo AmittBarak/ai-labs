@@ -1,11 +1,4 @@
 
-def selection_pressure_exploitation_factor(population, selection_pressure):
-    """
-    Calculate the selection pressure exploitation factor.
-    """
-    return 1 - selection_pressure * (1 - 1 / len(population))
-
-
 def genetic_diversity_by_genes_distance(population):
     """
     Calculate the genetic diversity of a population by genes distance.

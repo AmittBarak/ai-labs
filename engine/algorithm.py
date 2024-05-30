@@ -5,9 +5,10 @@ import typing
 from enum import Enum
 
 import numpy as np
+from tqdm import tqdm
 
-from engine.selection import sus, rws_linear_scaling, tournament, rank
-from sudoku.utils import aging, print_pretty_grid
+from engine.selection import rank, rws, sus, tournament
+from sudoku.utils import aging
 
 
 class SelectionMethod(Enum):
@@ -26,11 +27,13 @@ class GeneticSettings:
     max_generations: int
     mutation_rate: float
     selection: SelectionMethod
+    mutation_generator: typing.Callable[[any, float], any]
+    crossover_generator: typing.Callable[[any, any], any]
+    fitness_calculator: typing.Callable[[any], float]
+    individual_generator: typing.Callable[[int], any]
     elite_size: float = 0.1
-    mutation_generator: typing.Callable[[any], any] = None
-    crossover_generator: typing.Callable[[any, any], any] = None
-    fitness_calculator: typing.Callable[[any], float] = None
-    individual_generator: typing.Callable[[], any] = None
+    verbose: bool = True
+    print_function: typing.Callable = print
 
 
 def run_genetic_algorithm(settings: GeneticSettings):
@@ -41,8 +44,9 @@ def run_genetic_algorithm(settings: GeneticSettings):
     # Initialize the ages of the population
     ages = [random.random() for _ in range(settings.population_size)]
 
-    # Generate the initial
-    population = [settings.individual_generator() for _ in range(settings.population_size)]
+    # Generate the initial population
+    population = [settings.individual_generator(settings.genes_count) for _ in range(settings.population_size)]
+    print(population)
 
     # Check population sizes
     for individual in population:
@@ -51,8 +55,9 @@ def run_genetic_algorithm(settings: GeneticSettings):
             return
 
     # Run the genetic algorithm
-    for generation in range(settings.max_generations):
-        print(f"Generation {generation}")
+    for generation in tqdm(range(settings.max_generations), desc="Genetic Algorithm Progress"):
+        if settings.verbose:
+            print(f"Generation {generation}")
         generation_cpu_start = time.process_time()
 
         # Calculate the fitness of the population
@@ -66,16 +71,17 @@ def run_genetic_algorithm(settings: GeneticSettings):
         avg = np.mean(population_fitness)
         dev = np.std(population_fitness)
 
-        # Print the best individual every 10 generations
-        if generation % 10 == 0:
-            best_individual = max(population, key=lambda i: settings.fitness_calculator(i))
-            print_pretty_grid(best_individual)
-
-        print(f"Generation {generation}")
-        print(f"Best Fitness = {max(population_fitness)}")
-        print(f"Worst Fitness = {min(population_fitness)}")
-        print(f"Standard Deviation = {dev}")
-        print(f"Average Fitness = {avg}")
+        if settings.verbose:
+            print("--------------------")
+            print(
+                f"Generation {generation}: "
+                f"Average Fitness = {int(round(avg))}, "
+                f"Selection Pressure Exploitation Factor: "
+                f"Fitness Variance = {calculate_selection_pressure_fitness_variance(population_fitness)}, "
+                f"Top Average Selection = {calculate_selection_pressure_top_average_selection(population_fitness)} "
+                f"Max fitness = {max(population_fitness)}"
+            )
+            print("--------------------")
 
         # Check for convergence
         elite_size = int(settings.population_size * settings.elite_size)
@@ -90,65 +96,69 @@ def run_genetic_algorithm(settings: GeneticSettings):
             population_fitness = aging(population_fitness, ages)
 
         while len(offspring) < settings.population_size - elite_size:
-            parent1, parent2 = get_parents(settings.selection, population, population_fitness)
-            child1, child2 = settings.crossover_generator(parent1, parent2)
+            parent1, parent2 = get_parents(settings.selection, population, population_fitness, elites)
 
-            # validate that we got a permutation
-            if sorted(child1) != sorted(parent1) or sorted(child2) != sorted(parent2):
-                print(f"Error: Crossover did not produce a permutation.")
-                return
+            crossover_result = settings.crossover_generator(parent1, parent2)
+            if isinstance(crossover_result, list) or isinstance(crossover_result, tuple):
+                children = crossover_result
+            else:
+                children = [crossover_result]
 
-            if len(child1) != settings.genes_count or len(child2) != settings.genes_count:
-                print(f"Error: Crossover resulted in incorrect child size.")
-                return
+            for child in children:
+                child = settings.mutation_generator(child, settings.mutation_rate)
+                offspring.append(child)
 
-            if random.random() < settings.mutation_rate:
-                child1 = settings.mutation_generator(child1)
-                child2 = settings.mutation_generator(child2)
-
-            # validate that we got a permutation
-            if sorted(child1) != sorted(parent1) or sorted(child2) != sorted(parent2):
-                print(f"Error: Mutate did not produce a permutation.")
-                return
-
-            if len(child1) != settings.genes_count or len(child2) != settings.genes_count:
-                print(f"Error: Mutation resulted in incorrect child size.")
-                return
-
-            offspring.append(child1)
-            offspring.append(child2)
-
-        population = elites + offspring[:settings.population_size - elite_size]
+        population = elites + offspring
+        ages = [age + 1 / settings.population_size for age in ages]
 
         # Increment the ages of the population
         generation_cpu_end = time.process_time()
         generation_cpu_ticks = generation_cpu_end - generation_cpu_start
         generation_cpu_elapsed = generation_cpu_end - start_cpu_time
-
-        print(f"cpu Generation {generation}: Ticks Clock cpu = {generation_cpu_ticks} seconds, "
-              f"Total Elapsed = {generation_cpu_elapsed:.2f} seconds")
+        if settings.verbose:
+            print(f"cpu Generation {generation}: Ticks Clock cpu = {generation_cpu_ticks} seconds, "
+                  f"Total Elapsed = {generation_cpu_elapsed:.2f} seconds")
 
     cpu_convergence = time.process_time() - start_cpu_time
-    print(f"cpu Time to convergence: {cpu_convergence:.2f} seconds")
+    if settings.verbose:
+        print(f"cpu Time to convergence: {cpu_convergence:.2f} seconds")
 
     best_individual = max(population, key=lambda i: settings.fitness_calculator(i))
     best_fitness = settings.fitness_calculator(best_individual)
     return best_individual, best_fitness, all_fitness_scores, all_generations
 
 
-def get_parents(selection, population, population_fitness):
+def get_parents(selection, population, population_fitness, elites=None):
     choices: dict[SelectionMethod, callable] = {
         SelectionMethod.SUS: sus,
-        SelectionMethod.RWS: rws_linear_scaling,
+        SelectionMethod.RWS: rws,
         SelectionMethod.TOURNAMENT: tournament,
         SelectionMethod.RANK: rank
     }
 
     if selection not in choices:
-        parent1 = random.choice(population)
-        parent2 = random.choice(population)
+        parent1 = random.choice(elites)
+        parent2 = random.choice(elites)
 
     else:
         parent1 = choices[selection](population, population_fitness)
         parent2 = choices[selection](population, population_fitness)
     return parent1, parent2
+
+
+def calculate_selection_pressure_fitness_variance(population_fitness):
+    """
+    Calculate the selection pressure (exploitation factor) using fitness variance.
+    """
+    population_fitness_copy = np.array(population_fitness)
+    return 1 - np.var(population_fitness_copy) / np.mean(population_fitness_copy)
+
+
+def calculate_selection_pressure_top_average_selection(population_fitness: [float]):
+    """
+    Calculate the selection pressure (exploitation factor) using top average selection.
+    """
+    population_fitness_copy = np.array(population_fitness)
+    population_fitness_copy.sort()
+    top_individuals = population_fitness_copy[:int(len(population_fitness_copy) * 0.1)]
+    return np.mean(top_individuals) / np.mean(population_fitness_copy)

@@ -43,13 +43,11 @@ def cycle_crossover(parent1, parent2):
         raise ValueError(
             "Parents are not permutations of the same set of elements, parent1: {}, parent2: {}".format(parent1,
                                                                                                         parent2))
-
     child1, child2 = [-1] * len(parent1), [-1] * len(parent2)
     cycle_index = 0
     cycle_count = 0
     visited_indices = set()
     while len(visited_indices) < len(parent1):
-
         if cycle_index in visited_indices:
             cycle_index = next((i for i in range(len(parent1)) if i not in visited_indices), None)
             if cycle_index is None:
@@ -61,7 +59,6 @@ def cycle_crossover(parent1, parent2):
         while start_idx not in cycle:
             if start_idx < 0:
                 break
-
             cycle.append(start_idx)
             start_idx = parent2.index(parent1[start_idx])
 

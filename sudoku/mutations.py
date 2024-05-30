@@ -36,7 +36,7 @@ def swap_mutation(individual):
 
 
 def invert_mutation_generator(game_grid):
-    def invert_mutation(individual):
+    def invert_mutation(individual, mutation_rate: float):
         """
         Performs Inversion Mutation on an individual for each row in a Sudoku grid.
         Use the original game grid to determine the rows in the individual.

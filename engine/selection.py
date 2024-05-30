@@ -3,6 +3,16 @@ import random
 import numpy as np
 
 
+def rws(population, fitnesses):
+    total_fitness = sum(fitnesses)
+    pick = random.uniform(0, total_fitness)
+    current = 0
+    for individual, fitness in zip(population, fitnesses):
+        current += fitness
+        if current > pick:
+            return individual
+
+
 def rws_linear_scaling(population, fitnesses, a=1.0, b=0.0, min_val=0.0, max_val=1.0):
     fitnesses = np.array(fitnesses)
     min_fitness = fitnesses.min()
@@ -24,7 +34,7 @@ def rws_linear_scaling(population, fitnesses, a=1.0, b=0.0, min_val=0.0, max_val
     return population[selected_index]
 
 
-def sus(population, fitnesses, a=1.0, b=0.0, min_val=0.0, max_val=1.0):
+def sus_linear_scaling(population, fitnesses, a=1.0, b=0.0, min_val=0.0, max_val=1.0):
     fitnesses = np.array(fitnesses)
     min_fitness = fitnesses.min()
     max_fitness = fitnesses.max()
@@ -59,6 +69,22 @@ def sus(population, fitnesses, a=1.0, b=0.0, min_val=0.0, max_val=1.0):
     return selected_individuals
 
 
+def sus(population, fitnesses):
+    total_fitness = sum(fitnesses)
+    step = total_fitness / len(population)
+    start = random.uniform(0, step)
+    points = [start + i * step for i in range(len(population))]
+    selected = []
+    current_member = 0
+    current_fitness = fitnesses[0]
+    for point in points:
+        while current_fitness < point:
+            current_member += 1
+            current_fitness += fitnesses[current_member]
+        selected.append(population[current_member])
+    return random.choice(selected)
+
+
 def rank(population, fitnesses):
     ranks = sorted(range(len(fitnesses)), key=lambda i: fitnesses[i])
     rank_probs = [rank / sum(ranks) for rank in ranks]
@@ -76,3 +102,27 @@ def tournament(population, fitnesses, k=3, p=0.7):
     else:
         selected.remove(best_idx)
         return population[random.choice(selected)]
+
+
+def calculate_selection_pressure_fitness_variance(population):
+    """
+    Calculate the selection pressure (exploitation factor) using fitness variance.
+    """
+    fitnesses = [fitness for fitness in population]
+    return 1 - np.var(fitnesses) / np.mean(fitnesses)
+
+
+def calculate_selection_pressure_top_average_selection(population):
+    """
+    Calculate the selection pressure (exploitation factor) using top average selection.
+    """
+    population.sort()
+    top_individuals = population[:int(len(population) * 0.1)]
+    return np.mean(top_individuals) / np.mean(population)
+
+
+def selection_pressure_exploitation_factor(population, selection_pressure):
+    """
+    Calculate the selection pressure exploitation factor.
+    """
+    return 1 - selection_pressure * (1 - 1 / len(population))
