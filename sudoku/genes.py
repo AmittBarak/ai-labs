@@ -20,6 +20,7 @@ def individual_generator(given_grid: list[list[int]]) -> typing.Callable[[int], 
 
         for row in range(9):
             missing_numbers = [num for num in range(1, 10) if num not in given_grid[row]]
+            print(missing_numbers)
             random.shuffle(missing_numbers)
             index = 0
 

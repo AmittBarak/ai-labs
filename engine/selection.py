@@ -104,6 +104,7 @@ def tournament(population, fitnesses, k=3, p=0.7):
         return population[random.choice(selected)]
 
 
+# todo fixme
 def calculate_selection_pressure_fitness_variance(population):
     """
     Calculate the selection pressure (exploitation factor) using fitness variance.
@@ -112,6 +113,7 @@ def calculate_selection_pressure_fitness_variance(population):
     return 1 - np.var(fitnesses) / np.mean(fitnesses)
 
 
+# todo fixme
 def calculate_selection_pressure_top_average_selection(population):
     """
     Calculate the selection pressure (exploitation factor) using top average selection.
@@ -119,10 +121,3 @@ def calculate_selection_pressure_top_average_selection(population):
     population.sort()
     top_individuals = population[:int(len(population) * 0.1)]
     return np.mean(top_individuals) / np.mean(population)
-
-
-def selection_pressure_exploitation_factor(population, selection_pressure):
-    """
-    Calculate the selection pressure exploitation factor.
-    """
-    return 1 - selection_pressure * (1 - 1 / len(population))

@@ -88,12 +88,12 @@ def run_selected_genetic_algorithm():
             best_individual, best_fitness, all_fitness_scores, all_generations = run_genetic_algorithm(
                 # 435/498
                 GeneticSettings(
-                    population_size=500,
+                    population_size=300,
                     genes_count=81,
-                    elite_size=0.1,
-                    max_generations=300,
-                    mutation_rate=0.01,
-                    selection=SelectionMethod.RANK,
+                    elite_size=0.5,
+                    max_generations=150,
+                    mutation_rate=0.0001,
+                    selection=SelectionMethod.NO_SELECTION,
                     use_aging=True,
                     print_function=utils.print_pretty_grid,
                     verbose=True,
@@ -121,7 +121,7 @@ def run_selected_genetic_algorithm():
         for problem_id, items in list(problems.items())[:5]:
             bin_capacity = 150
             population_size = 100
-            max_generations = 1000
+            max_generations = 100
             mutation_rate = 0.01
             print(f"Running genetic algorithm for problem: {problem_id}")
             ga_bin_packing = bin_packing.GeneticAlgorithmBinPacking(items, bin_capacity, population_size, max_generations,

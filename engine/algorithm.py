@@ -18,6 +18,7 @@ class SelectionMethod(Enum):
     RANK = 4
     NO_SELECTION = 0
 
+
 @dataclasses.dataclass
 class GeneticSettings:
     """Configuration for the genetic algorithm."""
@@ -34,7 +35,6 @@ class GeneticSettings:
     elite_size: float = 0.1
     verbose: bool = True
     print_function: typing.Callable = print
-
 
 def run_genetic_algorithm(settings: GeneticSettings):
     all_generations = []
@@ -75,10 +75,11 @@ def run_genetic_algorithm(settings: GeneticSettings):
             print("--------------------")
             print(
                 f"Generation {generation}: "
+                f"Dev: {dev}, "
                 f"Average Fitness = {int(round(avg))}, "
                 f"Selection Pressure Exploitation Factor: "
-                f"Fitness Variance = {calculate_selection_pressure_fitness_variance(population_fitness)}, "
-                f"Top Average Selection = {calculate_selection_pressure_top_average_selection(population_fitness)} "
+                f"Selection Pressure Fitness Variance = {calculate_selection_pressure_fitness_variance(population_fitness)}, "
+                f"Selection Pressure Top Average Selection = {calculate_selection_pressure_top_average_selection(population_fitness)} "
                 f"Max fitness = {max(population_fitness)}"
             )
             print("--------------------")
