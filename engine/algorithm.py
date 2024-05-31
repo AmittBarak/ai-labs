@@ -16,7 +16,7 @@ class SelectionMethod(Enum):
     RWS = 2
     TOURNAMENT = 3
     RANK = 4
-
+    NO_SELECTION = 0
 
 @dataclasses.dataclass
 class GeneticSettings:
