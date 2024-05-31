@@ -62,13 +62,13 @@ def calculate_sudoku_fitness(game_grid):
                 if original[i][j] == 0:
                     # Check for duplicates in the row
                     if list(individual[i, :]).count(individual[i][j]) > 1:
-                        fitness -= 5
+                        fitness -= 10
                     else:
                         fitness += 5
 
                     # Check for duplicates in the column
                     if list(individual[:, j]).count(individual[i][j]) > 1:
-                        fitness -= 5
+                        fitness -= 10
                     else:
                         fitness += 5
 
