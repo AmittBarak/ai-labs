@@ -54,8 +54,7 @@ def run_selected_genetic_algorithm():
                 population_size=100,
                 max_generations=100,
                 mutation_rate=0.01,
-                # todo here is without selection method
-                selection=get_for_selection_method(),
+                selection=0,
                 fitness_calculator=fitness_GA,
                 individual_generator=lambda genes: ''.join(chr(random.randint(32, 126)) for _ in range(genes)),
                 mutation_generator=mutate,
