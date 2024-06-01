@@ -1,43 +1,5 @@
 import numpy as np
 
-# def calculate_sudoku_fitness(game_grid):
-#     def calculate_fitness_reward_penalize(individual):
-#         individual = np.array(individual).reshape(9, 9)
-#         original = np.array(game_grid).reshape(9, 9)
-#         fitness = 0
-#         for i in range(9):
-#             fitness += len(set(individual[i]))  # Row uniqueness
-#             fitness += len(set(individual[:, i]))  # Column uniqueness
-#
-#         for i in range(3):
-#             for j in range(3):
-#                 subgrid = individual[i * 3:(i + 1) * 3, j * 3:(j + 1) * 3].flatten()
-#                 fitness += len(set(subgrid))  # Subgrid uniqueness
-#
-#         # Reward no conflicts in original empty spots
-#         for i in range(9):
-#             for j in range(9):
-#                 if original[i][j] == 0:
-#                     # Check for duplicates in the row
-#                     if individual[i][j] in individual[i, :] and list(individual[i, :]).count(individual[i][j]) > 1:
-#                         fitness -= 5
-#
-#                     # Check for duplicates in the column
-#                     if individual[i][j] in individual[:, j] and list(individual[:, j]).count(individual[i][j]) > 1:
-#                         fitness -= 5
-#
-#                     # Check for duplicates in the subgrid
-#                     subgrid = individual[i // 3 * 3:i // 3 * 3 + 3, j // 3 * 3:j // 3 * 3 + 3].flatten()
-#                     if individual[i][j] in subgrid and list(subgrid).count(individual[i][j]) > 1:
-#                         fitness -= 5
-#                     else:
-#                         fitness += 5
-#
-#                 elif original[i][j] != individual[i][j]:
-#                     fitness -= 5
-#         return fitness
-#
-#     return calculate_fitness_reward_penalize
 
 def calculate_sudoku_fitness(game_grid):
     def calculate_fitness_reward_penalize(individual):
@@ -83,6 +45,8 @@ def calculate_sudoku_fitness(game_grid):
         return fitness
 
     return calculate_fitness_reward_penalize
+
+
 
 
 def test_calculate_fitness_reward_penalize():

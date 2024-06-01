@@ -8,12 +8,36 @@ from sudoku import utils
 from sudoku.crossover import cycle_crossover_2d
 from sudoku.fitness import calculate_sudoku_fitness
 from sudoku.genes import individual_generator
-from sudoku.mutations import invert_mutation_generator
-from sudoku.dataset import games, games_solutions
+from sudoku.mutations import invert_mutation_sudoku, swap_mutation_sudoku, scramble_mutation_sudoku
+from sudoku.dataset import games, GAME_SOLUTIONS
 
 
-# Main function to run the selected genetic algorithm
-def run_selected_genetic_algorithm():
+def main():
+    """Main function to run the selected genetic algorithm."""
+    display_menu()
+    choice = input("Enter your choice (0, 1, 2, 3, 4, 5, 6): ")
+
+    if choice == '0':
+        quit()
+
+    options = {
+        '1': run_ga_with_selection_options,
+        '2': run_aging,
+        '3': run_aging_with_selection_options,
+        '4': run_sudoku_solver,
+        '5': run_bin_packing,
+        '6': run_bin_packing_first_fit
+    }
+
+    if choice in options:
+        options[choice]()
+    else:
+        print("Invalid choice, please try again.")
+        main()
+
+
+def display_menu():
+    """Display the main menu options."""
     print("What do you wish to run?")
     print("1. GA with option of SUS + Linear scaling/RWS + Linear scaling /TOURNAMENT/RWS + RANK")
     print("2. Aging")
@@ -23,135 +47,164 @@ def run_selected_genetic_algorithm():
     print("6. Bin packing with First Fit algorithm")
     print("0. Quit")
 
-    choice = input("Enter your choice (0, 1, 2, 3, 4, 5, 6): ")
 
-    if choice == '0':
-        quit()
+def run_ga_with_selection_options():
+    """Run GA with different selection methods."""
+    best_individual, best_fitness, all_fitness_scores, all_generations = run_genetic_algorithm(
+        GeneticSettings(
+            use_aging=False,
+            genes_count=13,
+            population_size=400,
+            max_generations=100,
+            mutation_rate=0.04,
+            selection=get_selection_method(),
+            fitness_calculator=fitness_GA,
+            individual_generator=lambda genes: ''.join(chr(random.randint(32, 126)) for _ in range(genes)),
+            mutation_generator=mutate,
+            crossover_generator=crossover
+        )
+    )
 
-    elif choice == "1":
+    print("Best individual:", best_individual)
+    print("Best fitness:", best_fitness)
+
+
+def run_aging():
+    """Run GA with aging."""
+    best_individual, best_fitness, all_fitness_scores, all_generations = run_genetic_algorithm(
+        GeneticSettings(
+            use_aging=True,
+            genes_count=13,
+            population_size=100,
+            max_generations=100,
+            mutation_rate=0.01,
+            selection=SelectionMethod.NO_SELECTION,
+            fitness_calculator=fitness_GA,
+            individual_generator=lambda genes: ''.join(chr(random.randint(32, 126)) for _ in range(genes)),
+            mutation_generator=mutate,
+            crossover_generator=crossover
+        )
+    )
+    print("Best individual:", best_individual)
+    print("Best fitness:", best_fitness)
+
+
+def run_aging_with_selection_options():
+    """Run GA with aging and different selection methods."""
+    best_individual, best_fitness, all_fitness_scores, all_generations = run_genetic_algorithm(
+        GeneticSettings(
+            use_aging=True,
+            genes_count=13,
+            population_size=100,
+            max_generations=100,
+            mutation_rate=0.01,
+            selection=get_selection_method(),
+            fitness_calculator=fitness_GA,
+            individual_generator=lambda genes: ''.join(chr(random.randint(32, 126)) for _ in range(genes)),
+            mutation_generator=mutate,
+            crossover_generator=crossover
+        )
+    )
+    print("Best individual:", best_individual)
+    print("Best fitness:", best_fitness)
+
+
+def run_sudoku_solver():
+    """Run GA for Sudoku solving."""
+    solutions = []
+
+    game_settings = {
+        0: {'population_size': 400, 'mutation_rate': 0.04, 'selection': SelectionMethod.RWS, 'use_aging': True,
+            "elite_size": 0.5, "max_generations": 500, "mutation_generator": swap_mutation_sudoku(games[0])},
+
+        1: {'population_size': 500, 'mutation_rate': 0.04, 'selection': SelectionMethod.RWS, 'use_aging': False,
+            "elite_size": 0.4, "max_generations": 1000, "mutation_generator": scramble_mutation_sudoku(games[1])},
+
+        2: {'population_size': 800, 'mutation_rate': 0.04, 'selection': SelectionMethod.SUS, 'use_aging': True,
+            "elite_size": 0.3, "max_generations": 2000, "mutation_generator": scramble_mutation_sudoku(games[2])},
+
+        3: {'population_size': 2000, 'mutation_rate': 0.02, 'selection': SelectionMethod.SUS, 'use_aging': False,
+            "elite_size": 0.3, "max_generations": 3000, "mutation_generator": invert_mutation_sudoku(games[3])},
+
+        4: {'population_size': 2000, 'mutation_rate': 0.02, 'selection': SelectionMethod.SUS, 'use_aging': False,
+            "elite_size": 0.3, "max_generations": 4000, "mutation_generator": swap_mutation_sudoku(games[4])},
+
+        5: {'population_size': 3000, 'mutation_rate': 0.04, 'selection': SelectionMethod.RWS, 'use_aging': True,
+            "elite_size": 0.3, "max_generations": 5000, "mutation_generator": invert_mutation_sudoku(games[5])}
+    }
+
+    for i, game in enumerate(games[0:6]):
+        chosen_game = game
+        settings = game_settings.get(i, game_settings[0])  # Default to game 0 settings if not found
+
         best_individual, best_fitness, all_fitness_scores, all_generations = run_genetic_algorithm(
             GeneticSettings(
-                use_aging=False,
-                genes_count=13,
-                population_size=400,
-                max_generations=100,
-                mutation_rate=0.04,
-                selection=get_for_selection_method(),
-                fitness_calculator=fitness_GA,
-                individual_generator=lambda genes: ''.join(chr(random.randint(32, 126)) for _ in range(genes)),
-                mutation_generator=mutate,
-                crossover_generator=crossover
-            )
+                population_size=settings['population_size'],
+                genes_count=81,
+                elite_size=settings['elite_size'],
+                max_generations=200,
+                mutation_rate=settings['mutation_rate'],
+                selection=settings['selection'],
+                use_aging=settings['use_aging'],
+                print_function=utils.print_pretty_grid,
+                verbose=True,
+                crossover_generator=cycle_crossover_2d,
+                mutation_generator=invert_mutation_sudoku(chosen_game),
+                fitness_calculator=calculate_sudoku_fitness(chosen_game),
+                individual_generator=individual_generator(chosen_game),
+            ),
         )
+        solutions.append(best_individual)
 
-        print("Best individual:", best_individual)
-        print("Best fitness:", best_fitness)
-    elif choice == "2":
-        best_individual, best_fitness, all_fitness_scores, all_generations = run_genetic_algorithm(
-            GeneticSettings(
-                use_aging=True,
-                genes_count=13,
-                population_size=100,
-                max_generations=100,
-                mutation_rate=0.01,
-                selection=0,
-                fitness_calculator=fitness_GA,
-                individual_generator=lambda genes: ''.join(chr(random.randint(32, 126)) for _ in range(genes)),
-                mutation_generator=mutate,
-                crossover_generator=crossover
-            )
-        )
-        print("Best individual:", best_individual)
-        print("Best fitness:", best_fitness)
-    elif choice == "3":
-        best_individual, best_fitness, all_fitness_scores, all_generations = run_genetic_algorithm(
-            GeneticSettings(
-                use_aging=True,
-                genes_count=13,
-                population_size=100,
-                max_generations=100,
-                mutation_rate=0.01,
-                selection=get_for_selection_method(),
-                fitness_calculator=fitness_GA,
-                individual_generator=lambda genes: ''.join(chr(random.randint(32, 126)) for _ in range(genes)),
-                mutation_generator=mutate,
-                crossover_generator=crossover
-            )
-        )
-        print("Best individual:", best_individual)
-        print("Best fitness:", best_fitness)
-    elif choice == '4':
-        solutions = []
-        for game in games[0:3]:
-            chosen_game = game
-            # Run the genetic algorithm
-            best_individual, best_fitness, all_fitness_scores, all_generations = run_genetic_algorithm(
-                GeneticSettings(
-                    population_size=400,
-                    genes_count=81,
-                    elite_size=0.5,
-                    max_generations=200,
-                    mutation_rate=0.04,
-                    selection=SelectionMethod.NO_SELECTION,
-                    use_aging=True,
-                    print_function=utils.print_pretty_grid,
-                    verbose=True,
-                    crossover_generator=cycle_crossover_2d,
-                    mutation_generator=invert_mutation_generator(chosen_game),
-                    fitness_calculator=calculate_sudoku_fitness(chosen_game),
-                    individual_generator=individual_generator(chosen_game),
-                ),
-            )
-            solutions.append(best_individual)
-            break
-        for solution, game_solution in zip(solutions, games_solutions):
-            print(f"Solution:")
-            utils.print_pretty_grid_diff(solution, game_solution)
-            print(f"Is valid: {utils.is_valid_sudoku(solution)}")
-
-    elif choice == '5':
-        print("Do you wish to use adaptive fitness and not the fixed fitness?")
-        adaptive = input("'y' for adaptive fitness and 'n' for no adaptive fitness: ").lower() == 'y'
-        print("Do you wish to use aging?")
-        use_aging = input("'y' for aging and 'n' for no aging: ").lower() == 'y'
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        file_path = os.path.join(current_dir, 'binpack1.txt')
-        problems = bin_packing_utils.read_problems_from_file(file_path)
-        for problem_id, items in list(problems.items())[:5]:
-            bin_capacity = 150
-            population_size = 100
-            max_generations = 300
-            mutation_rate = 0.01
-            print(f"Running genetic algorithm for problem: {problem_id}")
-            ga_bin_packing = bin_packing.GeneticAlgorithmBinPacking(items, bin_capacity, population_size,
-                                                                    max_generations,
-                                                                    mutation_rate, adaptive, use_aging)
-            best_solution, num_bins_used, best_generation, ga_time = ga_bin_packing.run()
-            print(
-                f"Best solution for {problem_id} uses {num_bins_used} bins and the number of generations it took "
-                f"{best_generation}")
-    elif choice == '6':
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        file_path = os.path.join(current_dir, 'binpack1.txt')
-        bin_packing_utils.run_first_fit(file_path)
+    for i, solution in enumerate(solutions):
+        print(f"Solution {i + 1}:")
+        utils.print_pretty_grid_diff(solution, GAME_SOLUTIONS[i])
+        print(f"Is valid: {utils.is_valid_sudoku(solution)}")
 
 
-def get_for_selection_method() -> SelectionMethod:
+def run_bin_packing():
+    """Run GA for bin packing."""
+    adaptive = input("'y' for adaptive fitness and 'n' for no adaptive fitness: ").lower() == 'y'
+    use_aging = input("'y' for aging and 'n' for no aging: ").lower() == 'y'
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    file_path = os.path.join(current_dir, 'binpack1.txt')
+    problems = bin_packing_utils.read_problems_from_file(file_path)
+    for problem_id, items in list(problems.items())[:5]:
+        bin_capacity = 150
+        population_size = 100
+        max_generations = 300
+        mutation_rate = 0.01
+        print(f"Running genetic algorithm for problem: {problem_id}")
+        ga_bin_packing = bin_packing.GeneticAlgorithmBinPacking(
+            items, bin_capacity, population_size, max_generations, mutation_rate, adaptive, use_aging)
+        best_solution, num_bins_used, best_generation, ga_time = ga_bin_packing.run()
+        print(f"Best solution for {problem_id} uses {num_bins_used} bins and the number of generations it took {best_generation}")
+
+
+def run_bin_packing_first_fit():
+    """Run bin packing with First Fit algorithm."""
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    file_path = os.path.join(current_dir, 'binpack1.txt')
+    bin_packing_utils.run_first_fit(file_path)
+
+
+def get_selection_method() -> SelectionMethod:
+    """Get the selection method from the user."""
+    global selection_choice
     valid_selection = False
-    selection = 5
     while not valid_selection:
         print("Which selection would you like?")
         print("1. SUS + Linear scaling")
         print("2. RWS + Linear scaling")
         print("3. TOURNAMENT")
         print("4. RWS + RANK")
-        selection = input("Enter your choice (1, 2, 3, 4): ")
-        if selection in ["1", "2", "3", "4"]:
+        selection_choice = input("Enter your choice (1, 2, 3, 4): ")
+        if selection_choice in ["1", "2", "3", "4"]:
             valid_selection = True
         else:
             print("Invalid choice, please select again.")
-    return SelectionMethod(int(selection))
+    return SelectionMethod(int(selection_choice))
 
 
 if __name__ == '__main__':
-    run_selected_genetic_algorithm()
+    main()

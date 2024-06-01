@@ -3,7 +3,7 @@ import numpy as np
 from tqdm import tqdm
 
 
-def sudoku_partially_matched_crossover(parent1, parent2):
+def pmx_2d(parent1, parent2):
     """
     Performs Partially Matched Crossover (PMX) on two parent individuals.
     This function takes two parent individuals and performs Partially Matched Crossover (PMX) to produce two child
@@ -42,8 +42,8 @@ def sudoku_partially_matched_crossover(parent1, parent2):
 def cycle_crossover(parent1, parent2):
     if sorted(parent1) != sorted(parent2):
         raise ValueError(
-            "Parents are not permutations of the same set of elements, parent1: {}, parent2: {}".format(parent1,
-                                                                                                        parent2))
+            "Parents are not permutations of the same set of elements, "
+            "parent1: {}, parent2: {}".format(parent1, parent2))
     child1, child2 = [-1] * len(parent1), [-1] * len(parent2)
     cycle_index = 0
     cycle_count = 0
@@ -63,7 +63,8 @@ def cycle_crossover(parent1, parent2):
             cycle.append(start_idx)
             start_idx = parent2.index(parent1[start_idx])
 
-        # Copy cycle from parent1 to child1 and from parent2 to child2 if its even index cycle (cycle_0, cycle_2..)
+        # Copy cycle from parent1 to child1 and from parent2 to
+        # child2 if its even index cycle (cycle_0, cycle_2..)
         if cycle_count % 2 == 0:
             for idx in cycle:
                 child1[idx] = parent1[idx]
@@ -88,34 +89,11 @@ def cycle_crossover_2d(parent1, parent2):
     parent2_2d = np.array(parent2).reshape((9, 9))
 
     child1_2d, child2_2d = [], []
-
-    # Perform cycle crossover on the 2D grids
-    # Randomly select method to perfom cycle crossover on rows, columns or subgrids
-    method = random.choice([0, 1, 2])
-
     # Cross over each row of the 2D grids
     for i in range(9):  # Assuming a 9x9 Sudoku grid
         child1_row, child2_row = cycle_crossover(list(parent1_2d[i]), list(parent2_2d[i]))
         child1_2d.append(child1_row)
         child2_2d.append(child2_row)
-
-    # if method == 1:
-    #     # Cross over each column of the 2D grids
-    #     for i in range(9):  # Assuming a 9x9 Sudoku grid
-    #         child1_col, child2_col = cycle_crossover(list(parent1_2d[:, i]), list(parent2_2d[:, i]))
-    #         child1_2d[:, i] = child1_col
-    #         child2_2d[:, i] = child2_col
-    #
-    # if method == 2:
-    #     # Cross over each 3x3 subgrid of the 2D grids
-    #     for i in range(3):
-    #         for j in range(3):
-    #             child1_subgrid, child2_subgrid = cycle_crossover(
-    #                 list(parent1_2d[i * 3:i * 3 + 3, j * 3:j * 3 + 3].flatten()),
-    #                 list(parent2_2d[i * 3:i * 3 + 3, j * 3:j * 3 + 3].flatten())
-    #             )
-    #             child1_2d[i * 3:i * 3 + 3, j * 3:j * 3 + 3] = np.array(child1_subgrid).reshape((3, 3))
-    #             child2_2d[i * 3:i * 3 + 3, j * 3:j * 3 + 3] = np.array(child2_subgrid).reshape((3, 3))
 
     # Flatten the resulting 2D child grids back to 1D arrays
     child1 = [gene for row in child1_2d for gene in row]
@@ -128,7 +106,7 @@ if __name__ == '__main__':
     parent1 = [1, 2, 3, 4, 5, 6, 7, 8, 9]
     parent2 = [9, 3, 7, 8, 2, 6, 5, 1, 4]
 
-    child1, child2 = sudoku_partially_matched_crossover(parent1, parent2)
+    child1, child2 = pmx_2d(parent1, parent2)
     print("Parent 1:", parent1)
     print("Parent 2:", parent2)
     print("Child 1:", child1)
