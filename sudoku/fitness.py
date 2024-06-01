@@ -134,7 +134,6 @@ def test_calculate_fitness_reward_penalize():
 
     print("All tests passed.")
 
-
-# Run the tests
-test_calculate_fitness_reward_penalize()
+if __name__ == "__main__":
+        test_calculate_fitness_reward_penalize()
 

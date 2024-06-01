@@ -82,7 +82,7 @@ def run_selected_genetic_algorithm():
         print("Best fitness:", best_fitness)
     elif choice == '4':
         solutions = []
-        for game in games:
+        for game in games[0:3]:
             chosen_game = game
             # Run the genetic algorithm
             best_individual, best_fitness, all_fitness_scores, all_generations = run_genetic_algorithm(
@@ -104,7 +104,6 @@ def run_selected_genetic_algorithm():
                 ),
             )
             solutions.append(best_individual)
-            break
         for solution, game_solution in zip(solutions, games_solutions):
             print(f"Solution:")
             utils.print_pretty_grid_diff(solution, game_solution)
@@ -121,7 +120,7 @@ def run_selected_genetic_algorithm():
         for problem_id, items in list(problems.items())[:5]:
             bin_capacity = 150
             population_size = 100
-            max_generations = 100
+            max_generations = 300
             mutation_rate = 0.01
             print(f"Running genetic algorithm for problem: {problem_id}")
             ga_bin_packing = bin_packing.GeneticAlgorithmBinPacking(items, bin_capacity, population_size, max_generations,
