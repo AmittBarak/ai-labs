@@ -33,9 +33,9 @@ def run_selected_genetic_algorithm():
             GeneticSettings(
                 use_aging=False,
                 genes_count=13,
-                population_size=100,
+                population_size=400,
                 max_generations=100,
-                mutation_rate=0.01,
+                mutation_rate=0.04,
                 selection=get_for_selection_method(),
                 fitness_calculator=fitness_GA,
                 individual_generator=lambda genes: ''.join(chr(random.randint(32, 126)) for _ in range(genes)),
@@ -86,13 +86,12 @@ def run_selected_genetic_algorithm():
             chosen_game = game
             # Run the genetic algorithm
             best_individual, best_fitness, all_fitness_scores, all_generations = run_genetic_algorithm(
-                # 435/498
                 GeneticSettings(
-                    population_size=300,
+                    population_size=400,
                     genes_count=81,
                     elite_size=0.5,
-                    max_generations=150,
-                    mutation_rate=0.0001,
+                    max_generations=200,
+                    mutation_rate=0.04,
                     selection=SelectionMethod.NO_SELECTION,
                     use_aging=True,
                     print_function=utils.print_pretty_grid,
@@ -104,6 +103,7 @@ def run_selected_genetic_algorithm():
                 ),
             )
             solutions.append(best_individual)
+            break
         for solution, game_solution in zip(solutions, games_solutions):
             print(f"Solution:")
             utils.print_pretty_grid_diff(solution, game_solution)
@@ -123,8 +123,9 @@ def run_selected_genetic_algorithm():
             max_generations = 300
             mutation_rate = 0.01
             print(f"Running genetic algorithm for problem: {problem_id}")
-            ga_bin_packing = bin_packing.GeneticAlgorithmBinPacking(items, bin_capacity, population_size, max_generations,
-                                                        mutation_rate, adaptive, use_aging)
+            ga_bin_packing = bin_packing.GeneticAlgorithmBinPacking(items, bin_capacity, population_size,
+                                                                    max_generations,
+                                                                    mutation_rate, adaptive, use_aging)
             best_solution, num_bins_used, best_generation, ga_time = ga_bin_packing.run()
             print(
                 f"Best solution for {problem_id} uses {num_bins_used} bins and the number of generations it took "
@@ -152,5 +153,5 @@ def get_for_selection_method() -> SelectionMethod:
     return SelectionMethod(int(selection))
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     run_selected_genetic_algorithm()

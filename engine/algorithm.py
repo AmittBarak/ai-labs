@@ -36,6 +36,7 @@ class GeneticSettings:
     verbose: bool = True
     print_function: typing.Callable = print
 
+
 def run_genetic_algorithm(settings: GeneticSettings):
     all_generations = []
     all_fitness_scores = []
@@ -46,7 +47,6 @@ def run_genetic_algorithm(settings: GeneticSettings):
 
     # Generate the initial population
     population = [settings.individual_generator(settings.genes_count) for _ in range(settings.population_size)]
-    print(population)
 
     # Check population sizes
     for individual in population:
@@ -55,9 +55,9 @@ def run_genetic_algorithm(settings: GeneticSettings):
             return
 
     # Run the genetic algorithm
-    for generation in tqdm(range(settings.max_generations), desc="Genetic Algorithm Progress"):
+    for generation in tqdm(range(settings.max_generations), desc="Genetic Algorithm Progress", disable=not settings.verbose):
         if settings.verbose:
-            print(f"Generation {generation}")
+            print(f"\nGeneration {generation}")
         generation_cpu_start = time.process_time()
 
         # Calculate the fitness of the population
@@ -74,13 +74,13 @@ def run_genetic_algorithm(settings: GeneticSettings):
         if settings.verbose:
             print("--------------------")
             print(
-                f"Generation {generation}: "
-                f"Dev: {dev}, "
-                f"Average Fitness = {int(round(avg))}, "
-                f"Selection Pressure Exploitation Factor: "
-                f"Selection Pressure Fitness Variance = {calculate_selection_pressure_fitness_variance(population_fitness)}, "
-                f"Selection Pressure Top Average Selection = {calculate_selection_pressure_top_average_selection(population_fitness)} "
-                f"Max fitness = {max(population_fitness)}"
+                f"\nGeneration {generation}: "
+                f"\nDev: {dev}, "
+                f"\nAverage Fitness = {int(round(avg))}, "
+                f"\nSelection Pressure Exploitation Factor: "
+                f"\nSelection Pressure Fitness Variance = {calculate_selection_pressure_fitness_variance(population_fitness)}, "
+                f"\nSelection Pressure Top Average Selection = {calculate_selection_pressure_top_average_selection(population_fitness)} "
+                f"\nMax fitness = {max(population_fitness)}"
             )
             print("--------------------")
 

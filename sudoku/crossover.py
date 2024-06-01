@@ -1,5 +1,6 @@
 import random
 import numpy as np
+from tqdm import tqdm
 
 
 def sudoku_partially_matched_crossover(parent1, parent2):
@@ -88,10 +89,33 @@ def cycle_crossover_2d(parent1, parent2):
 
     child1_2d, child2_2d = [], []
 
+    # Perform cycle crossover on the 2D grids
+    # Randomly select method to perfom cycle crossover on rows, columns or subgrids
+    method = random.choice([0, 1, 2])
+
+    # Cross over each row of the 2D grids
     for i in range(9):  # Assuming a 9x9 Sudoku grid
         child1_row, child2_row = cycle_crossover(list(parent1_2d[i]), list(parent2_2d[i]))
         child1_2d.append(child1_row)
         child2_2d.append(child2_row)
+
+    # if method == 1:
+    #     # Cross over each column of the 2D grids
+    #     for i in range(9):  # Assuming a 9x9 Sudoku grid
+    #         child1_col, child2_col = cycle_crossover(list(parent1_2d[:, i]), list(parent2_2d[:, i]))
+    #         child1_2d[:, i] = child1_col
+    #         child2_2d[:, i] = child2_col
+    #
+    # if method == 2:
+    #     # Cross over each 3x3 subgrid of the 2D grids
+    #     for i in range(3):
+    #         for j in range(3):
+    #             child1_subgrid, child2_subgrid = cycle_crossover(
+    #                 list(parent1_2d[i * 3:i * 3 + 3, j * 3:j * 3 + 3].flatten()),
+    #                 list(parent2_2d[i * 3:i * 3 + 3, j * 3:j * 3 + 3].flatten())
+    #             )
+    #             child1_2d[i * 3:i * 3 + 3, j * 3:j * 3 + 3] = np.array(child1_subgrid).reshape((3, 3))
+    #             child2_2d[i * 3:i * 3 + 3, j * 3:j * 3 + 3] = np.array(child2_subgrid).reshape((3, 3))
 
     # Flatten the resulting 2D child grids back to 1D arrays
     child1 = [gene for row in child1_2d for gene in row]
