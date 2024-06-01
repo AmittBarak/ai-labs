@@ -71,7 +71,7 @@ games = [
 ]
 
 
-games_solutions = [
+GAME_SOLUTIONS = [
     [
          4, 3, 5, 2, 6, 9, 7, 8, 1,
          6, 8, 2, 5, 7, 1, 4, 9, 3,

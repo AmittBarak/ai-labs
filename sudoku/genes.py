@@ -32,46 +32,7 @@ def individual_generator(given_grid: list[list[int]]) -> typing.Callable[[int], 
         individual = [num for row in individual for num in row]
         return individual
     return generator
-    # def generator(num_genes: int) -> any:
-    #     individual = [row[:] for row in given_grid]  # Create a copy of the given grid
-    #
-    #     def is_valid(num: int, row: int, col: int) -> bool:
-    #         # Check if num is not in the current row, column, and 3x3 subgrid
-    #         if num in individual[row]:
-    #             return False
-    #         if num in (individual[r][col] for r in range(9)):
-    #             return False
-    #         subgrid_row_start = (row // 3) * 3
-    #         subgrid_col_start = (col // 3) * 3
-    #         for r in range(subgrid_row_start, subgrid_row_start + 3):
-    #             for c in range(subgrid_col_start, subgrid_col_start + 3):
-    #                 if individual[r][c] == num:
-    #                     return False
-    #         return True
-    #
-    #     def fill_grid() -> bool:
-    #         for row in range(9):
-    #             for col in range(9):
-    #                 if individual[row][col] == 0:  # If the cell is empty
-    #                     random_numbers = list(range(1, 10))
-    #                     random.shuffle(random_numbers)
-    #                     for num in random_numbers:
-    #                         if is_valid(num, row, col):
-    #                             individual[row][col] = num
-    #                             if fill_grid():
-    #                                 return True
-    #                             individual[row][col] = 0
-    #                     return False
-    #         return True
-    #
-    #     if not fill_grid():
-    #         raise ValueError("No valid solution exists for the given Sudoku grid")
-    #
-    #     # Flatten the 2D grid to a 1D array
-    #     individual_flat = [num for row in individual for num in row]
-    #     return individual_flat
-    #
-    # return generator
+
 
 
 if __name__ == '__main__':
