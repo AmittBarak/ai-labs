@@ -114,23 +114,23 @@ def run_sudoku_solver():
     solutions = []
 
     game_settings = {
-        0: {'population_size': 400, 'mutation_rate': 0.04, 'selection': SelectionMethod.RWS, 'use_aging': True,
-            "elite_size": 0.5, "max_generations": 500, "mutation_generator": swap_mutation_sudoku(games[0])},
+        0: {'population_size': 400, 'mutation_rate': 0.04, 'selection': SelectionMethod.NO_SELECTION, 'use_aging': True,
+            "elite_size": 0.5, "max_generations": 200, "mutation_generator": invert_mutation_sudoku(games[0])},
 
-        1: {'population_size': 500, 'mutation_rate': 0.04, 'selection': SelectionMethod.RWS, 'use_aging': False,
-            "elite_size": 0.4, "max_generations": 1000, "mutation_generator": scramble_mutation_sudoku(games[1])},
+        1: {'population_size': 500, 'mutation_rate': 0.04, 'selection': SelectionMethod.RWS, 'use_aging': True,
+            "elite_size": 0.5, "max_generations": 200, "mutation_generator": scramble_mutation_sudoku(games[1])},
 
-        2: {'population_size': 800, 'mutation_rate': 0.04, 'selection': SelectionMethod.SUS, 'use_aging': True,
-            "elite_size": 0.3, "max_generations": 2000, "mutation_generator": scramble_mutation_sudoku(games[2])},
+        2: {'population_size': 500, 'mutation_rate': 0.04, 'selection': SelectionMethod.SUS, 'use_aging': True,
+            "elite_size": 0.5, "max_generations": 200, "mutation_generator": scramble_mutation_sudoku(games[2])},
 
-        3: {'population_size': 2000, 'mutation_rate': 0.02, 'selection': SelectionMethod.SUS, 'use_aging': False,
-            "elite_size": 0.3, "max_generations": 3000, "mutation_generator": invert_mutation_sudoku(games[3])},
+        3: {'population_size': 500, 'mutation_rate': 0.04, 'selection': SelectionMethod.SUS, 'use_aging': False,
+            "elite_size": 0.5, "max_generations": 200, "mutation_generator": invert_mutation_sudoku(games[3])},
 
-        4: {'population_size': 2000, 'mutation_rate': 0.02, 'selection': SelectionMethod.SUS, 'use_aging': False,
-            "elite_size": 0.3, "max_generations": 4000, "mutation_generator": swap_mutation_sudoku(games[4])},
+        4: {'population_size': 500, 'mutation_rate': 0.09, 'selection': SelectionMethod.TOURNAMENT, 'use_aging': False,
+            "elite_size": 0.5, "max_generations": 200, "mutation_generator": swap_mutation_sudoku(games[4])},
 
-        5: {'population_size': 3000, 'mutation_rate': 0.04, 'selection': SelectionMethod.RWS, 'use_aging': True,
-            "elite_size": 0.3, "max_generations": 5000, "mutation_generator": invert_mutation_sudoku(games[5])}
+        5: {'population_size': 500, 'mutation_rate': 0.09, 'selection': SelectionMethod.TOURNAMENT, 'use_aging': True,
+            "elite_size": 0.5, "max_generations": 200, "mutation_generator": invert_mutation_sudoku(games[5])}
     }
 
     for i, game in enumerate(games[0:6]):
@@ -142,14 +142,14 @@ def run_sudoku_solver():
                 population_size=settings['population_size'],
                 genes_count=81,
                 elite_size=settings['elite_size'],
-                max_generations=200,
+                max_generations=settings['max_generations'],
                 mutation_rate=settings['mutation_rate'],
                 selection=settings['selection'],
                 use_aging=settings['use_aging'],
                 print_function=utils.print_pretty_grid,
                 verbose=True,
                 crossover_generator=cycle_crossover_2d,
-                mutation_generator=invert_mutation_sudoku(chosen_game),
+                mutation_generator=settings['mutation_generator'],
                 fitness_calculator=calculate_sudoku_fitness(chosen_game),
                 individual_generator=individual_generator(chosen_game),
             ),

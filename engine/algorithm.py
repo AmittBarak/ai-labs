@@ -57,6 +57,7 @@ class GeneticSettings:
     print_function: typing.Callable = print
     stop_condition_function: typing.Callable[[any], bool] = None
 
+
 def run_genetic_algorithm(settings: GeneticSettings):
     all_generations = []
     all_fitness_scores = []
@@ -154,6 +155,7 @@ def run_genetic_algorithm(settings: GeneticSettings):
     best_individual = max(population, key=lambda i: settings.fitness_calculator(i))
     best_fitness = settings.fitness_calculator(best_individual)
     return best_individual, best_fitness, all_fitness_scores, all_generations
+
 
 def get_parents(selection, population, population_fitness, elites=None):
     choices: dict[SelectionMethod, callable] = {
