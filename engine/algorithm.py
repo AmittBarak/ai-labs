@@ -78,7 +78,9 @@ def run_genetic_algorithm(settings: GeneticSettings):
     # Run the genetic algorithm
     for generation in tqdm(range(settings.max_generations), desc="Genetic Algorithm Progress"):
         if settings.verbose:
-            logging.info(f"\nGeneration {generation}")
+            logging.info("\n" + "="*20)
+            logging.info(f"Generation {generation}")
+            logging.info("="*20)
         generation_cpu_start = time.process_time()
 
         # Calculate the fitness of the population
@@ -96,17 +98,13 @@ def run_genetic_algorithm(settings: GeneticSettings):
         dev = np.std(population_fitness)
 
         if settings.verbose:
-            logging.info("--------------------")
-            logging.info(
-                f"\nGeneration {generation}: "
-                f"\nDev: {dev}, "
-                f"\nAverage Fitness = {int(round(avg))}, "
-                f"\nSelection Pressure Exploitation Factor: "
-                f"\nSelection Pressure Fitness Variance = {calculate_selection_pressure_fitness_variance(population_fitness)}, "
-                f"\nSelection Pressure Top Average Selection = {calculate_selection_pressure_top_average_selection(population_fitness)} "
-                f"\nMax fitness = {max(population_fitness)}"
-            )
-            logging.info("--------------------")
+            logging.info(f"Dev: {dev:.6f}")
+            logging.info(f"Average Fitness = {int(round(avg))}")
+            logging.info(f"Selection Pressure Exploitation Factor:")
+            logging.info(f"Selection Pressure Fitness Variance = {calculate_selection_pressure_fitness_variance(population_fitness):.6f}")
+            logging.info(f"Selection Pressure Top Average Selection = {calculate_selection_pressure_top_average_selection(population_fitness):.6f}")
+            logging.info(f"Max fitness = {max(population_fitness)}")
+            logging.info("-"*20)
 
         if settings.stop_condition_function is not None:
             if settings.stop_condition_function(population_by_fitness[max(population_fitness)]):
@@ -145,12 +143,13 @@ def run_genetic_algorithm(settings: GeneticSettings):
         generation_cpu_ticks = generation_cpu_end - generation_cpu_start
         generation_cpu_elapsed = generation_cpu_end - start_cpu_time
         if settings.verbose:
-            logging.info(f"cpu Generation {generation}: Ticks Clock cpu = {generation_cpu_ticks} seconds, "
-                         f"Total Elapsed = {generation_cpu_elapsed:.2f} seconds")
+            logging.info(f"CPU Time for Generation {generation}: {generation_cpu_ticks:.2f} seconds")
+            logging.info(f"Total Elapsed CPU Time: {generation_cpu_elapsed:.2f} seconds")
+            logging.info("="*20 + "\n")
 
     cpu_convergence = time.process_time() - start_cpu_time
     if settings.verbose:
-        logging.info(f"cpu Time to convergence: {cpu_convergence:.2f} seconds")
+        logging.info(f"Total CPU Time to Convergence: {cpu_convergence:.2f} seconds")
 
     best_individual = max(population, key=lambda i: settings.fitness_calculator(i))
     best_fitness = settings.fitness_calculator(best_individual)

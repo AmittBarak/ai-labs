@@ -10,6 +10,7 @@ from sudoku.fitness import calculate_sudoku_fitness
 from sudoku.genes import individual_generator
 from sudoku.mutations import invert_mutation_sudoku, swap_mutation_sudoku, scramble_mutation_sudoku
 from sudoku.dataset import games, GAME_SOLUTIONS
+import concurrent.futures
 
 
 def main():
@@ -111,32 +112,33 @@ def run_aging_with_selection_options():
 
 def run_sudoku_solver():
     """Run GA for Sudoku solving."""
-    solutions = []
-
     game_settings = {
-        0: {'population_size': 400, 'mutation_rate': 0.04, 'selection': SelectionMethod.NO_SELECTION, 'use_aging': True,
-            "elite_size": 0.5, "max_generations": 200, "mutation_generator": invert_mutation_sudoku(games[0])},
+        0: {'population_size': 900, 'mutation_rate': 0.04, 'selection': SelectionMethod.NO_SELECTION, 'use_aging': True,
+            "elite_size": 0.4, "max_generations": 300, "mutation_generator": invert_mutation_sudoku(games[0])},
 
         1: {'population_size': 500, 'mutation_rate': 0.04, 'selection': SelectionMethod.RWS, 'use_aging': True,
             "elite_size": 0.5, "max_generations": 200, "mutation_generator": scramble_mutation_sudoku(games[1])},
 
-        2: {'population_size': 500, 'mutation_rate': 0.04, 'selection': SelectionMethod.SUS, 'use_aging': True,
+        2: {'population_size': 3000, 'mutation_rate': 0.09, 'selection': SelectionMethod.SUS, 'use_aging': True,
             "elite_size": 0.5, "max_generations": 200, "mutation_generator": scramble_mutation_sudoku(games[2])},
 
-        3: {'population_size': 500, 'mutation_rate': 0.04, 'selection': SelectionMethod.SUS, 'use_aging': False,
+        3: {'population_size': 3000, 'mutation_rate': 0.09, 'selection': SelectionMethod.SUS, 'use_aging': False,
             "elite_size": 0.5, "max_generations": 200, "mutation_generator": invert_mutation_sudoku(games[3])},
 
-        4: {'population_size': 500, 'mutation_rate': 0.09, 'selection': SelectionMethod.TOURNAMENT, 'use_aging': False,
+        4: {'population_size': 3000, 'mutation_rate': 0.09, 'selection': SelectionMethod.TOURNAMENT, 'use_aging': False,
             "elite_size": 0.5, "max_generations": 200, "mutation_generator": swap_mutation_sudoku(games[4])},
 
         5: {'population_size': 500, 'mutation_rate': 0.09, 'selection': SelectionMethod.TOURNAMENT, 'use_aging': True,
             "elite_size": 0.5, "max_generations": 200, "mutation_generator": invert_mutation_sudoku(games[5])}
     }
 
-    for i, game in enumerate(games[0:6]):
-        chosen_game = game
-        settings = game_settings.get(i, game_settings[0])  # Default to game 0 settings if not found
+    print("Available Sudoku games: 0, 1, 2, 3, 4, 5")
+    selected_games = input("Enter the numbers of the games you want to solve, separated by commas: ")
+    selected_games = [int(x) for x in selected_games.split(",") if x.isdigit() and 0 <= int(x) <= 5]
 
+    def solve_game(game_index):
+        chosen_game = games[game_index]
+        settings = game_settings.get(game_index, game_settings[0])  # Default to game 0 settings if not found
         best_individual, best_fitness, all_fitness_scores, all_generations = run_genetic_algorithm(
             GeneticSettings(
                 population_size=settings['population_size'],
@@ -154,11 +156,19 @@ def run_sudoku_solver():
                 individual_generator=individual_generator(chosen_game),
             ),
         )
-        solutions.append(best_individual)
+        return best_individual
 
-    for i, solution in enumerate(solutions):
-        print(f"Solution {i + 1}:")
-        utils.print_pretty_grid_diff(solution, GAME_SOLUTIONS[i])
+    solutions = []
+    for game_index in selected_games:
+        try:
+            solution = solve_game(game_index)
+            solutions.append((game_index, solution))
+        except Exception as e:
+            print(f"Game {game_index} generated an exception: {e}")
+
+    for game_index, solution in solutions:
+        print(f"Solution for Game {game_index + 1}:")
+        utils.print_pretty_grid_diff(solution, GAME_SOLUTIONS[game_index])
         print(f"Is valid: {utils.is_valid_sudoku(solution)}")
 
 
