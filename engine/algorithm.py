@@ -12,14 +12,12 @@ import logging
 from engine.selection import rank, rws, sus, tournament
 from engine.utils import calculate_selection_pressure_top_average_selection, calculate_selection_pressure_fitness_variance, aging
 
-
 class SelectionMethod(Enum):
     SUS = 1
     RWS = 2
     TOURNAMENT = 3
     RANK = 4
     NO_SELECTION = 0
-
 
 # Set up logging
 coloredlogs.install(
@@ -55,7 +53,13 @@ class GeneticSettings:
     elite_size: float = 0.1
     verbose: bool = True
     print_function: typing.Callable = print
-    stop_condition_function: typing.Callable[[any], bool] = None
+    stop_condition_function: typing.Callable[[any, list], bool] = None
+    adjust_parameters: typing.Callable = None  # Function to adjust parameters
+
+    # Attributes for dynamic adjustment logic
+    fitness_variance_threshold: float = 10.0
+    top_avg_selection_threshold: float = 1.05
+    adjustment_factor: float = 0.05  # 5% adjustment factor
 
 
 def run_genetic_algorithm(settings: GeneticSettings):
@@ -96,18 +100,22 @@ def run_genetic_algorithm(settings: GeneticSettings):
         # Print the average fitness and standard deviation of the population
         avg = np.mean(population_fitness)
         dev = np.std(population_fitness)
-
+        fitness_variance = calculate_selection_pressure_fitness_variance(population_fitness)
+        top_avg_selection = calculate_selection_pressure_top_average_selection(population_fitness)
         if settings.verbose:
-            logging.info(f"Dev: {dev:.6f}")
+            logging.info(f"Standard Deviation: {dev:.6f}")
             logging.info(f"Average Fitness = {int(round(avg))}")
-            logging.info(f"Selection Pressure Exploitation Factor:")
-            logging.info(f"Selection Pressure Fitness Variance = {calculate_selection_pressure_fitness_variance(population_fitness):.6f}")
-            logging.info(f"Selection Pressure Top Average Selection = {calculate_selection_pressure_top_average_selection(population_fitness):.6f}")
+            logging.info(f"Selection Pressure Fitness Variance = {fitness_variance:.6f}")
+            logging.info(f"Selection Pressure Top Average Selection = {top_avg_selection:.6f}")
             logging.info(f"Max fitness = {max(population_fitness)}")
             logging.info("-"*20)
 
+        if settings.adjust_parameters:
+            settings.adjust_parameters(settings, fitness_variance, top_avg_selection, generation)
+
         if settings.stop_condition_function is not None:
-            if settings.stop_condition_function(population_by_fitness[max(population_fitness)]):
+            best_individual = population_by_fitness[max(population_fitness)]
+            if settings.stop_condition_function(best_individual, population_fitness):
                 break
 
         # Check for convergence

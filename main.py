@@ -1,5 +1,7 @@
 import os
 import random
+
+import sudoku.utils
 from hello_world.hello_world import crossover, fitness_GA, mutate
 from bin_packing import utils as bin_packing_utils
 from bin_packing import bin_packing as bin_packing
@@ -113,23 +115,23 @@ def run_aging_with_selection_options():
 def run_sudoku_solver():
     """Run GA for Sudoku solving."""
     game_settings = {
-        0: {'population_size': 900, 'mutation_rate': 0.04, 'selection': SelectionMethod.NO_SELECTION, 'use_aging': True,
-            "elite_size": 0.4, "max_generations": 300, "mutation_generator": invert_mutation_sudoku(games[0])},
+        0: {'population_size': 1000, 'mutation_rate': 0.04, 'selection': SelectionMethod.RWS, 'use_aging': True,
+            "elite_size": 0.4, "max_generations": 500, "mutation_generator": invert_mutation_sudoku(games[0])},
 
-        1: {'population_size': 500, 'mutation_rate': 0.04, 'selection': SelectionMethod.RWS, 'use_aging': True,
-            "elite_size": 0.5, "max_generations": 200, "mutation_generator": scramble_mutation_sudoku(games[1])},
+        1: {'population_size': 1000, 'mutation_rate': 0.04, 'selection': SelectionMethod.RWS, 'use_aging': True,
+            "elite_size": 0.4, "max_generations": 500, "mutation_generator": invert_mutation_sudoku(games[1])},
 
-        2: {'population_size': 3000, 'mutation_rate': 0.09, 'selection': SelectionMethod.SUS, 'use_aging': True,
-            "elite_size": 0.5, "max_generations": 200, "mutation_generator": scramble_mutation_sudoku(games[2])},
+        2: {'population_size': 10000, 'mutation_rate': 0.03, 'selection': SelectionMethod.RWS, 'use_aging': True,
+            "elite_size": 0.4, "max_generations": 5000, "mutation_generator": invert_mutation_sudoku(games[2])},
 
-        3: {'population_size': 3000, 'mutation_rate': 0.09, 'selection': SelectionMethod.SUS, 'use_aging': False,
-            "elite_size": 0.5, "max_generations": 200, "mutation_generator": invert_mutation_sudoku(games[3])},
+        3: {'population_size': 10000, 'mutation_rate': 0.04, 'selection': SelectionMethod.RWS, 'use_aging': True,
+            "elite_size": 0.4, "max_generations": 5000, "mutation_generator": invert_mutation_sudoku(games[3])},
 
-        4: {'population_size': 3000, 'mutation_rate': 0.09, 'selection': SelectionMethod.TOURNAMENT, 'use_aging': False,
-            "elite_size": 0.5, "max_generations": 200, "mutation_generator": swap_mutation_sudoku(games[4])},
+        4: {'population_size': 10000, 'mutation_rate': 0.04, 'selection': SelectionMethod.RWS, 'use_aging': True,
+            "elite_size": 0.4, "max_generations": 5000, "mutation_generator": invert_mutation_sudoku(games[4])},
 
-        5: {'population_size': 500, 'mutation_rate': 0.09, 'selection': SelectionMethod.TOURNAMENT, 'use_aging': True,
-            "elite_size": 0.5, "max_generations": 200, "mutation_generator": invert_mutation_sudoku(games[5])}
+        5: {'population_size': 10000, 'mutation_rate': 0.04, 'selection': SelectionMethod.RWS, 'use_aging': True,
+            "elite_size": 0.4, "max_generations": 5000, "mutation_generator": invert_mutation_sudoku(games[5])}
     }
 
     print("Available Sudoku games: 0, 1, 2, 3, 4, 5")
@@ -154,6 +156,8 @@ def run_sudoku_solver():
                 mutation_generator=settings['mutation_generator'],
                 fitness_calculator=calculate_sudoku_fitness(chosen_game),
                 individual_generator=individual_generator(chosen_game),
+                adjust_parameters=sudoku.utils.adjust_parameters,  # Enable dynamic parameter adjustment
+                stop_condition_function=utils.sudoku_stop_condition(game_solution=GAME_SOLUTIONS[game_index])
             ),
         )
         return best_individual

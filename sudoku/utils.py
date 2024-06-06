@@ -97,7 +97,53 @@ def calculate_correctness(best_individual, game_solution):
 
 
 def sudoku_stop_condition(game_solution):
-    def stop_condition(best_individual) -> bool:
-        return calculate_correctness(best_individual, game_solution) == 100
+    def stop_condition(best_individual, population_fitness) -> bool:
+        correctness = calculate_correctness(best_individual, game_solution)
+        avg_fitness = sum(population_fitness) / len(population_fitness)
+        max_fitness = max(population_fitness)
+
+        if correctness == 100:
+            print("Solution found!")
+            return True
+        if avg_fitness == max_fitness:
+            print("Population has converged!")
+            return True
+        return False
 
     return stop_condition
+
+
+def adjust_parameters(settings, fitness_variance, top_avg_selection, generation):
+    """Adjust parameters based on fitness variance, top average selection, and generation phase."""
+    try:
+        # Define progress as a fraction of the total generations
+        progress = generation / settings.max_generations
+
+        # Adjust mutation rate based on fitness variance and top average selection
+        if fitness_variance < settings.fitness_variance_threshold:
+            settings.mutation_rate = min(settings.mutation_rate * (1 + settings.adjustment_factor), 0.5)
+        else:
+            settings.mutation_rate = max(settings.mutation_rate * (1 - settings.adjustment_factor), 0.01)
+
+        # Apply further adjustments based on progress through generations
+        if progress < 0.3:  # Early stages
+            settings.mutation_rate *= (1 + settings.adjustment_factor * 0.5)  # Aggressively increase mutation rate
+        elif progress > 0.7:  # Late stages
+            settings.mutation_rate *= (1 - settings.adjustment_factor * 0.5)  # Aggressively reduce mutation rate
+        else:  # Middle stages
+            settings.mutation_rate *= (1 + settings.adjustment_factor * 0.2)  # Moderate increase in mutation rate
+
+        # Check for stagnation and apply more aggressive adjustments if stuck
+        if fitness_variance == 0 and top_avg_selection == 1:
+            settings.mutation_rate = min(settings.mutation_rate * 2, 0.5)  # Double the mutation rate
+
+        # Ensure mutation rate stays within bounds
+        settings.mutation_rate = max(min(settings.mutation_rate, 0.5), 0.01)
+    except Exception as e:
+        print(f"Error adjusting parameters: {e}")
+        raise
+
+
+
+
+
