@@ -1,5 +1,5 @@
 import random
-
+from collections import defaultdict
 import numpy as np
 
 
@@ -102,3 +102,72 @@ def tournament(population, fitnesses, k=3, p=0.7):
     else:
         selected.remove(best_idx)
         return population[random.choice(selected)]
+
+
+def nieching_partition(items, bin_capacity):
+    partitions = []
+    current_partition = []
+    current_weight = 0
+
+    for item in items:
+        if current_weight + item <= bin_capacity:
+            current_partition.append(item)
+            current_weight += item
+        else:
+            partitions.append(current_partition)
+            current_partition = [item]
+            current_weight = item
+
+    if current_partition:
+        partitions.append(current_partition)
+
+    return partitions
+
+def crowding_density(items, bin_capacity):
+    bins = []
+    current_bin = []
+    current_weight = 0
+
+    for item in items:
+        if current_weight + item <= bin_capacity:
+            current_bin.append(item)
+            current_weight += item
+        else:
+            if current_bin:
+                bins.append(current_bin)
+            current_bin = [item]
+            current_weight = item
+
+    if current_bin:
+        bins.append(current_bin)
+
+    random.shuffle(bins)
+    return bins
+
+def species_speciation(items, bin_capacity):
+    clusters = defaultdict(list)
+    max_item = max(items)
+    cluster_size = (max_item // 3) + 1
+
+    for item in items:
+        cluster_id = item // cluster_size
+        clusters[cluster_id].append(item)
+
+    bins = []
+    for cluster in clusters.values():
+        current_bin = []
+        current_weight = 0
+        for item in cluster:
+            if current_weight + item <= bin_capacity:
+                current_bin.append(item)
+                current_weight += item
+            else:
+                if current_bin:
+                    bins.append(current_bin)
+                current_bin = [item]
+                current_weight = item
+
+        if current_bin:
+            bins.append(current_bin)
+
+    return bins

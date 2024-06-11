@@ -1,7 +1,7 @@
 import random
 import time
 import numpy as np
-
+from engine.selection import crowding_density, nieching_partition, species_speciation
 
 class GeneticAlgorithmBinPacking:
     def __init__(self, items, bin_capacity, population_size=100, generations=1000, mutation_rate=0.01, adaptive=False, use_aging=False):
@@ -108,3 +108,16 @@ class GeneticAlgorithmBinPacking:
         end_time = time.process_time()
         best_individual = min(self.population, key=lambda x: self.fitness(x) if not self.adaptive else self.adaptive_fitness(x))
         return best_individual, self.best_fitness, self.best_generation, end_time - start_time
+
+    def fitness_function(self, individual, bin_capacity, method):
+        if method == "nieching":
+            partitions = nieching_partition(individual, bin_capacity)
+            return len(partitions)
+        elif method == "crowding":
+            bins = crowding_density(individual, bin_capacity)
+            return len(bins)
+        elif method == "speciation":
+            bins = species_speciation(individual, bin_capacity)
+            return len(bins)
+        else:
+            raise ValueError("Invalid method specified.")
