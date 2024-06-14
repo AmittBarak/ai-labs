@@ -109,15 +109,27 @@ class GeneticAlgorithmBinPacking:
         best_individual = min(self.population, key=lambda x: self.fitness(x) if not self.adaptive else self.adaptive_fitness(x))
         return best_individual, self.best_fitness, self.best_generation, end_time - start_time
 
-    def fitness_function(self, individual, bin_capacity, method):
-        if method == "nieching":
-            partitions = nieching_partition(individual, bin_capacity)
-            return len(partitions)
-        elif method == "crowding":
-            bins = crowding_density(individual, bin_capacity)
-            return len(bins)
-        elif method == "speciation":
-            bins = species_speciation(individual, bin_capacity)
-            return len(bins)
-        else:
-            raise ValueError("Invalid method specified.")
+    # def fitness_function(self, individual, bin_capacity, method):
+    #     if method == "nieching":
+    #         partitions = nieching_partition(individual, bin_capacity)
+    #         return len(partitions)
+    #     elif method == "crowding":
+    #         bins = crowding_density(individual, bin_capacity)
+    #         return len(bins)
+    #     elif method == "speciation":
+    #         bins = species_speciation(individual, bin_capacity)
+    #         return len(bins)
+    #     else:
+    #         raise ValueError("Invalid method specified.")
+
+    def fitness_nieching(self,individual, bin_capacity):
+        partitions = nieching_partition(individual, bin_capacity)
+        return len(partitions)
+
+    def fitness_crowding(self,individual, bin_capacity):
+        bins = crowding_density(individual, bin_capacity)
+        return len(bins)
+
+    def fitness_speciation(self,individual, bin_capacity):
+        bins = species_speciation(individual, bin_capacity)
+        return len(bins)
