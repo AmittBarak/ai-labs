@@ -29,7 +29,8 @@ def main():
         '3': run_aging_with_selection_options,
         '4': run_sudoku_solver,
         '5': run_bin_packing,
-        '6': run_bin_packing_first_fit
+        '6': run_bin_packing_first_fit,
+        '7': run_bin_packing_with_crowding_density_nieching_partition_species_speciation
     }
 
     if choice in options:
@@ -48,6 +49,7 @@ def display_menu():
     print("4. Sudoku solver")
     print("5. Bin packing")
     print("6. Bin packing with First Fit algorithm")
+    print("7. Bin packing with crowding density/nieching_partition/species_speciation")
     print("0. Quit")
 
 
@@ -200,6 +202,9 @@ def run_bin_packing_first_fit():
     current_dir = os.path.dirname(os.path.abspath(__file__))
     file_path = os.path.join(current_dir, 'binpack1.txt')
     bin_packing_utils.run_first_fit(file_path)
+
+def run_bin_packing_with_crowding_density_nieching_partition_species_speciation():
+    return
 
 
 def get_selection_method() -> SelectionMethod:
