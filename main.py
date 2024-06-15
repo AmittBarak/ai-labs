@@ -19,7 +19,7 @@ import concurrent.futures
 def main():
     """Main function to run the selected genetic algorithm."""
     display_menu()
-    choice = input("Enter your choice (0, 1, 2, 3, 4, 5, 6): ")
+    choice = input("Enter your choice (0, 1, 2, 3, 4, 5, 6, 7): ")
 
     if choice == '0':
         quit()
