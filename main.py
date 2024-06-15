@@ -209,7 +209,6 @@ def run_bin_packing_with_crowding_density_nieching_partition_species_speciation(
     file_path = os.path.join(current_dir, 'binpack1.txt')
 
     problems = bin_packing_utils.read_problems_from_file(file_path)
-
     print("Select the function to use:")
     print("1. Crowding density")
     print("2. Nieching partition")
@@ -227,6 +226,9 @@ def run_bin_packing_with_crowding_density_nieching_partition_species_speciation(
         print("Invalid choice. Exiting.")
         return
 
+    adaptive = input("'y' for adaptive fitness and 'n' for no adaptive fitness: ").lower() == 'y'
+    use_aging = input("'y' for aging and 'n' for no aging: ").lower() == 'y'
+
     for problem_id, items in list(problems.items())[:5]:
         bin_capacity = 150
         population_size = 100
@@ -234,7 +236,7 @@ def run_bin_packing_with_crowding_density_nieching_partition_species_speciation(
         mutation_rate = 0.01
         print(f"Running genetic algorithm for problem: {problem_id}")
         ga_bin_packing = bin_packing.GeneticAlgorithmBinPacking(
-            items, bin_capacity, population_size, max_generations, mutation_rate, adaptive=False, use_aging=False,
+            items, bin_capacity, population_size, max_generations, mutation_rate, adaptive, use_aging,
             binning_function=selected_function
         )
         best_solution, num_bins_used, best_generation = ga_bin_packing.run()
