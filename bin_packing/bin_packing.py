@@ -115,3 +115,42 @@ class GeneticAlgorithmBinPacking:
         if self.binning_function:
             return best_individual, self.best_fitness, self.best_generation
         return best_individual, self.best_fitness, self.best_generation, end_time - start_time
+
+class MutationOperators:
+    """
+     A collection of mutation operators for genetic algorithms.
+    """
+    @staticmethod
+    def basic_mutation(individual, mutation_prob):
+        mutated_individual = individual[:]
+        for i in range(len(mutated_individual)):
+            if random.random() < mutation_prob:
+                mutated_individual[i] = 1 - mutated_individual[i]
+        return mutated_individual
+
+    @staticmethod
+    def non_uniform_mutation(individual, mutation_prob, generation, max_generations):
+        decay_factor = 1 - (generation / max_generations)
+        adjusted_mutation_prob = mutation_prob * decay_factor
+        return MutationOperators.basic_mutation(individual, adjusted_mutation_prob)
+
+    @staticmethod
+    def adaptive_mutation(individual, mutation_prob, population, fitness_func):
+        avg_fitness = np.mean([fitness_func(ind) for ind in population])
+        adjusted_mutation_prob = mutation_prob * (1 - avg_fitness)
+        return MutationOperators.basic_mutation(individual, adjusted_mutation_prob)
+
+    @staticmethod
+    def triggered_hyper_mutation(individual, mutation_prob, best_fitness, current_fitness, threshold=0.01):
+        if best_fitness - current_fitness < threshold:
+            adjusted_mutation_prob = mutation_prob * 2  # Hyper mutation
+        else:
+            adjusted_mutation_prob = mutation_prob
+        return MutationOperators.basic_mutation(individual, adjusted_mutation_prob)
+
+    @staticmethod
+    def self_adaptive_mutation(individual, mutation_prob, population, fitness_func):
+        max_fitness = max([fitness_func(ind) for ind in population])
+        relative_fitness = fitness_func(individual) / max_fitness
+        adjusted_mutation_prob = mutation_prob * (1 - relative_fitness)
+        return MutationOperators.basic_mutation(individual, adjusted_mutation_prob)
