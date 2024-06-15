@@ -4,7 +4,7 @@ import numpy as np
 from engine.selection import crowding_density, nieching_partition, species_speciation
 
 class GeneticAlgorithmBinPacking:
-    def __init__(self, items, bin_capacity, population_size=100, generations=1000, mutation_rate=0.01, adaptive=False, use_aging=False):
+    def __init__(self, items, bin_capacity, population_size=100, generations=1000, mutation_rate=0.01, adaptive=False, use_aging=False, binning_function=None):
         self.items = items
         self.bin_capacity = bin_capacity
         self.population_size = population_size
@@ -17,6 +17,7 @@ class GeneticAlgorithmBinPacking:
         self.ages = [random.random() for _ in range(population_size)]
         self.best_fitness = float('inf')
         self.best_generation = 0
+        self.binning_function = binning_function
 
     def initialize_population(self):
         population = []
@@ -100,36 +101,17 @@ class GeneticAlgorithmBinPacking:
                 next_population.append(self.mutate(child2))
             self.population = next_population
             self.ages = [age + 1 / self.population_size for age in self.ages]
-            current_best_individual = min(self.population, key=lambda x: self.fitness(x) if not self.adaptive else self.adaptive_fitness(x))
-            current_best_fitness = self.fitness(current_best_individual)
+            if self.binning_function:
+                current_best_individual = min(self.population, key=lambda x: len(self.binning_function(x, self.bin_capacity)))
+                current_best_fitness = len(self.binning_function(current_best_individual, self.bin_capacity))
+            else:
+                current_best_individual = min(self.population, key=lambda x: self.fitness(x) if not self.adaptive else self.adaptive_fitness(x))
+                current_best_fitness = self.fitness(current_best_individual)
             if current_best_fitness < self.best_fitness:
                 self.best_fitness = current_best_fitness
                 self.best_generation = generation
         end_time = time.process_time()
         best_individual = min(self.population, key=lambda x: self.fitness(x) if not self.adaptive else self.adaptive_fitness(x))
+        if self.binning_function:
+            return best_individual, self.best_fitness, self.best_generation
         return best_individual, self.best_fitness, self.best_generation, end_time - start_time
-
-    # def fitness_function(self, individual, bin_capacity, method):
-    #     if method == "nieching":
-    #         partitions = nieching_partition(individual, bin_capacity)
-    #         return len(partitions)
-    #     elif method == "crowding":
-    #         bins = crowding_density(individual, bin_capacity)
-    #         return len(bins)
-    #     elif method == "speciation":
-    #         bins = species_speciation(individual, bin_capacity)
-    #         return len(bins)
-    #     else:
-    #         raise ValueError("Invalid method specified.")
-
-    def fitness_nieching(self,individual, bin_capacity):
-        partitions = nieching_partition(individual, bin_capacity)
-        return len(partitions)
-
-    def fitness_crowding(self,individual, bin_capacity):
-        bins = crowding_density(individual, bin_capacity)
-        return len(bins)
-
-    def fitness_speciation(self,individual, bin_capacity):
-        bins = species_speciation(individual, bin_capacity)
-        return len(bins)

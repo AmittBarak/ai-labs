@@ -2,6 +2,7 @@ import os
 import random
 
 import sudoku.utils
+from engine.selection import nieching_partition, crowding_density, species_speciation
 from hello_world.hello_world import crossover, fitness_GA, mutate
 from bin_packing import utils as bin_packing_utils
 from bin_packing import bin_packing as bin_packing
@@ -204,7 +205,40 @@ def run_bin_packing_first_fit():
     bin_packing_utils.run_first_fit(file_path)
 
 def run_bin_packing_with_crowding_density_nieching_partition_species_speciation():
-    return
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    file_path = os.path.join(current_dir, 'binpack1.txt')
+
+    problems = bin_packing_utils.read_problems_from_file(file_path)
+
+    print("Select the function to use:")
+    print("1. Crowding density")
+    print("2. Nieching partition")
+    print("3. Species speciation")
+    function_choice = input("Enter your choice (1, 2, 3): ")
+
+    function_map = {
+        "1": crowding_density,
+        "2": nieching_partition,
+        "3": species_speciation
+    }
+
+    selected_function = function_map.get(function_choice)
+    if selected_function is None:
+        print("Invalid choice. Exiting.")
+        return
+
+    for problem_id, items in list(problems.items())[:5]:
+        bin_capacity = 150
+        population_size = 100
+        max_generations = 300
+        mutation_rate = 0.01
+        print(f"Running genetic algorithm for problem: {problem_id}")
+        ga_bin_packing = bin_packing.GeneticAlgorithmBinPacking(
+            items, bin_capacity, population_size, max_generations, mutation_rate, adaptive=False, use_aging=False,
+            binning_function=selected_function
+        )
+        best_solution, num_bins_used, best_generation = ga_bin_packing.run()
+        print(f"Best solution for {problem_id} uses {num_bins_used} bins and took {best_generation} generations.")
 
 
 def get_selection_method() -> SelectionMethod:
