@@ -10,7 +10,7 @@ from sudoku import utils
 from sudoku.crossover import cycle_crossover_2d
 from sudoku.fitness import calculate_sudoku_fitness
 from sudoku.genes import individual_generator
-from sudoku.mutations import invert_mutation_sudoku, swap_mutation_sudoku, scramble_mutation_sudoku
+from sudoku.mutations import invert_mutation_sudoku
 from sudoku.dataset import games, GAME_SOLUTIONS
 from bin_packing.bin_packing import MutationOperators
 import concurrent.futures
