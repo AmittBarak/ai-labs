@@ -4,7 +4,8 @@ import numpy as np
 from engine.selection import crowding_density, nieching_partition, species_speciation
 
 class GeneticAlgorithmBinPacking:
-    def __init__(self, items, bin_capacity, population_size=100, generations=1000, mutation_rate=0.01, adaptive=False, use_aging=False, binning_function=None):
+    def __init__(self, items, bin_capacity, population_size=100, generations=1000, mutation_rate=0.01, adaptive=False,
+                 use_aging=False, binning_function=None, mutation_function=None):
         self.items = items
         self.bin_capacity = bin_capacity
         self.population_size = population_size
@@ -18,6 +19,7 @@ class GeneticAlgorithmBinPacking:
         self.best_fitness = float('inf')
         self.best_generation = 0
         self.binning_function = binning_function
+        self.mutation_function = mutation_function
 
     def initialize_population(self):
         population = []

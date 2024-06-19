@@ -13,6 +13,7 @@ from sudoku.fitness import calculate_sudoku_fitness
 from sudoku.genes import individual_generator
 from sudoku.mutations import invert_mutation_sudoku, swap_mutation_sudoku, scramble_mutation_sudoku
 from sudoku.dataset import games, GAME_SOLUTIONS
+from bin_packing.bin_packing import MutationOperators
 import concurrent.futures
 
 
@@ -241,6 +242,50 @@ def run_bin_packing_with_crowding_density_nieching_partition_species_speciation(
         )
         best_solution, num_bins_used, best_generation = ga_bin_packing.run()
         print(f"Best solution for {problem_id} uses {num_bins_used} bins and took {best_generation} generations.")
+
+
+def run_bin_packing_with_mutation_function():
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    file_path = os.path.join(current_dir, 'binpack1.txt')
+
+    problems = bin_packing_utils.read_problems_from_file(file_path)
+    print("Select the function to use:")
+    print("1. basic")
+    print("2. non_uniform")
+    print("3. adaptive")
+    print("4. triggered_hyper")
+    print("5. self_adaptive")
+    function_choice = input("Enter your choice (1, 2, 3, 4, 5): ")
+
+    function_map = {
+        "1": MutationOperators.basic_mutation,
+        "2": MutationOperators.non_uniform_mutation,
+        "3": MutationOperators.adaptive_mutation,
+        "4": MutationOperators.triggered_hyper_mutation,
+        "5": MutationOperators.self_adaptive_mutation
+    }
+
+    selected_function = function_map.get(function_choice)
+    if selected_function is None:
+        print("Invalid choice. Exiting.")
+        return
+
+    adaptive = False
+    use_aging = False
+
+    for problem_id, items in list(problems.items())[:5]:
+        bin_capacity = 150
+        population_size = 100
+        max_generations = 300
+        mutation_rate = 0.01
+        print(f"Running genetic algorithm for problem: {problem_id}")
+        ga_bin_packing = bin_packing.GeneticAlgorithmBinPacking(
+            items, bin_capacity, population_size, max_generations, mutation_rate, adaptive, use_aging,
+            None, mutation_function=selected_function
+        )
+        best_solution, num_bins_used, best_generation = ga_bin_packing.run()
+        print(f"Best solution for {problem_id} uses {num_bins_used} bins and took {best_generation} generations.")
+
 
 
 def get_selection_method() -> SelectionMethod:
