@@ -138,8 +138,8 @@ class MutationOperators:
         return MutationOperators.basic_mutation(individual, adjusted_mutation_prob)
 
     @staticmethod
-    def adaptive_mutation(individual, mutation_prob, population, fitness_func):
-        avg_fitness = np.mean([fitness_func(ind) for ind in population])
+    def adaptive_mutation(individual, mutation_prob, population, fitness_func, bin_capacity):
+        avg_fitness = np.mean([fitness_func(ind, bin_capacity) for ind in population])
         adjusted_mutation_prob = mutation_prob * (1 - avg_fitness)
         return MutationOperators.basic_mutation(individual, adjusted_mutation_prob)
 
@@ -152,8 +152,8 @@ class MutationOperators:
         return MutationOperators.basic_mutation(individual, adjusted_mutation_prob)
 
     @staticmethod
-    def self_adaptive_mutation(individual, mutation_prob, population, fitness_func):
-        max_fitness = max([fitness_func(ind) for ind in population])
-        relative_fitness = fitness_func(individual) / max_fitness
+    def self_adaptive_mutation(individual, mutation_prob, population, fitness_func, bin_capacity):
+        max_fitness = max([fitness_func(ind, bin_capacity) for ind in population])
+        relative_fitness = fitness_func(individual, bin_capacity) / max_fitness
         adjusted_mutation_prob = mutation_prob * (1 - relative_fitness)
         return MutationOperators.basic_mutation(individual, adjusted_mutation_prob)
