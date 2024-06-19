@@ -1,6 +1,5 @@
 import os
 import random
-
 import sudoku.utils
 from engine.selection import nieching_partition, crowding_density, species_speciation
 from hello_world.hello_world import crossover, fitness_GA, mutate
