@@ -283,8 +283,7 @@ def run_bin_packing_with_mutation_function():
         print(f"Running genetic algorithm for problem: {problem_id}")
         ga_bin_packing = bin_packing.GeneticAlgorithmBinPacking(
             items, bin_capacity, population_size, max_generations, mutation_rate, adaptive, use_aging,
-            None, mutation_function=selected_function
-        )
+            None, mutation_function=selected_function)
         best_solution, num_bins_used, best_generation = ga_bin_packing.run()
         print(f"Best solution for {problem_id} uses {num_bins_used} bins and took {best_generation} generations.")
 
