@@ -20,20 +20,21 @@ import concurrent.futures
 def main():
     """Main function to run the selected genetic algorithm."""
     display_menu()
-    choice = input("Enter your choice (0, 1, 2, 3, 4, 5, 6, 7, 8): ")
+    # choice = input("Enter your choice (0, 1, 2, 3, 4, 5, 6, 7, 8): ")
+    choice = input("Enter your choice (0, 1, 2, 3, 4): ")
 
     if choice == '0':
         quit()
 
     options = {
-        '1': run_ga_with_selection_options,
-        '2': run_aging,
-        '3': run_aging_with_selection_options,
-        '4': run_sudoku_solver,
-        '5': run_bin_packing,
-        '6': run_bin_packing_first_fit,
-        '7': run_bin_packing_with_crowding_density_nieching_partition_species_speciation,
-        '8': run_bin_packing_with_mutation_function
+        # '1': run_ga_with_selection_options,
+        # '2': run_aging,
+        # '3': run_aging_with_selection_options,
+        # '4': run_sudoku_solver,
+        '1': run_bin_packing,
+        '2': run_bin_packing_first_fit,
+        '3': run_bin_packing_with_crowding_density_nieching_partition_species_speciation,
+        '4': run_bin_packing_with_mutation_function
     }
 
     if choice in options:
@@ -46,14 +47,14 @@ def main():
 def display_menu():
     """Display the main menu options."""
     print("What do you wish to run?")
-    print("1. GA with option of SUS + Linear scaling/RWS + Linear scaling /TOURNAMENT/RWS + RANK")
-    print("2. Aging")
-    print("3. Aging with option of SUS + Linear scaling/RWS + Linear scaling/TOURNAMENT/RWS + RANK")
-    print("4. Sudoku solver")
-    print("5. Bin packing")
-    print("6. Bin packing with First Fit algorithm")
-    print("7. Bin packing with crowding density/nieching_partition/species_speciation")
-    print("8. Bin packing with mutations")
+    # print("1. GA with option of SUS + Linear scaling/RWS + Linear scaling /TOURNAMENT/RWS + RANK")
+    # print("2. Aging")
+    # print("3. Aging with option of SUS + Linear scaling/RWS + Linear scaling/TOURNAMENT/RWS + RANK")
+    # print("4. Sudoku solver")
+    print("1. Bin packing")
+    print("2. Bin packing with First Fit algorithm")
+    print("3. Bin packing with crowding density/nieching_partition/species_speciation")
+    print("4. Bin packing with mutations")
     print("0. Quit")
 
 
