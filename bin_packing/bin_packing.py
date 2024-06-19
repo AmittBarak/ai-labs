@@ -99,8 +99,37 @@ class GeneticAlgorithmBinPacking:
             while len(next_population) < self.population_size:
                 parent1, parent2 = random.sample(selected, 2)
                 child1, child2 = self.crossover(parent1, parent2)
-                next_population.append(self.mutate(child1))
-                next_population.append(self.mutate(child2))
+                if self.mutation_function:
+                    if self.mutation_function == MutationOperators.basic_mutation:
+                        next_population.append(self.mutation_function(child1, self.mutation_rate))
+                        next_population.append(self.mutation_function(child2, self.mutation_rate))
+                    elif self.mutation_function == MutationOperators.non_uniform_mutation:
+                        next_population.append(
+                            self.mutation_function(child1, self.mutation_rate, generation, self.generations))
+                        next_population.append(
+                            self.mutation_function(child2, self.mutation_rate, generation, self.generations))
+                    elif self.mutation_function == MutationOperators.adaptive_mutation:
+                        next_population.append(
+                            self.mutation_function(child1, self.mutation_rate, self.population, self.fitness,
+                                                   self.bin_capacity))
+                        next_population.append(
+                            self.mutation_function(child2, self.mutation_rate, self.population, self.fitness,
+                                                   self.bin_capacity))
+                    elif self.mutation_function == MutationOperators.triggered_hyper_mutation:
+                        next_population.append(
+                            self.mutation_function(child1, self.mutation_rate, self.best_fitness, self.fitness(child1)))
+                        next_population.append(
+                            self.mutation_function(child2, self.mutation_rate, self.best_fitness, self.fitness(child2)))
+                    elif self.mutation_function == MutationOperators.self_adaptive_mutation:
+                        next_population.append(
+                            self.mutation_function(child1, self.mutation_rate, self.population, self.fitness,
+                                                   self.bin_capacity))
+                        next_population.append(
+                            self.mutation_function(child2, self.mutation_rate, self.population, self.fitness,
+                                                   self.bin_capacity))
+                else:
+                    next_population.append(self.mutate(child1))
+                    next_population.append(self.mutate(child2))
             self.population = next_population
             self.ages = [age + 1 / self.population_size for age in self.ages]
             if self.binning_function:
@@ -115,6 +144,8 @@ class GeneticAlgorithmBinPacking:
         end_time = time.process_time()
         best_individual = min(self.population, key=lambda x: self.fitness(x) if not self.adaptive else self.adaptive_fitness(x))
         if self.binning_function:
+            return best_individual, self.best_fitness, self.best_generation
+        if self.mutation_function:
             return best_individual, self.best_fitness, self.best_generation
         return best_individual, self.best_fitness, self.best_generation, end_time - start_time
 
@@ -141,10 +172,9 @@ class MutationOperators:
 
     @staticmethod
     def adaptive_mutation(individual, mutation_prob, population, fitness_func, bin_capacity):
-        avg_fitness = np.mean([fitness_func(ind, bin_capacity) for ind in population])
+        avg_fitness = np.mean([fitness_func(ind) for ind in population])
         adjusted_mutation_prob = mutation_prob * (1 - avg_fitness)
         return MutationOperators.basic_mutation(individual, adjusted_mutation_prob)
-
     @staticmethod
     def triggered_hyper_mutation(individual, mutation_prob, best_fitness, current_fitness, threshold=0.01):
         if best_fitness - current_fitness < threshold:
@@ -155,7 +185,7 @@ class MutationOperators:
 
     @staticmethod
     def self_adaptive_mutation(individual, mutation_prob, population, fitness_func, bin_capacity):
-        max_fitness = max([fitness_func(ind, bin_capacity) for ind in population])
-        relative_fitness = fitness_func(individual, bin_capacity) / max_fitness
+        max_fitness = max([fitness_func(ind) for ind in population])
+        relative_fitness = fitness_func(individual) / max_fitness
         adjusted_mutation_prob = mutation_prob * (1 - relative_fitness)
         return MutationOperators.basic_mutation(individual, adjusted_mutation_prob)

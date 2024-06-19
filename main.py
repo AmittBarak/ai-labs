@@ -20,7 +20,7 @@ import concurrent.futures
 def main():
     """Main function to run the selected genetic algorithm."""
     display_menu()
-    choice = input("Enter your choice (0, 1, 2, 3, 4, 5, 6, 7): ")
+    choice = input("Enter your choice (0, 1, 2, 3, 4, 5, 6, 7, 8): ")
 
     if choice == '0':
         quit()
@@ -32,7 +32,8 @@ def main():
         '4': run_sudoku_solver,
         '5': run_bin_packing,
         '6': run_bin_packing_first_fit,
-        '7': run_bin_packing_with_crowding_density_nieching_partition_species_speciation
+        '7': run_bin_packing_with_crowding_density_nieching_partition_species_speciation,
+        '8': run_bin_packing_with_mutation_function
     }
 
     if choice in options:
@@ -52,6 +53,7 @@ def display_menu():
     print("5. Bin packing")
     print("6. Bin packing with First Fit algorithm")
     print("7. Bin packing with crowding density/nieching_partition/species_speciation")
+    print("8. Bin packing with mutations")
     print("0. Quit")
 
 
@@ -285,7 +287,6 @@ def run_bin_packing_with_mutation_function():
         )
         best_solution, num_bins_used, best_generation = ga_bin_packing.run()
         print(f"Best solution for {problem_id} uses {num_bins_used} bins and took {best_generation} generations.")
-
 
 
 def get_selection_method() -> SelectionMethod:
