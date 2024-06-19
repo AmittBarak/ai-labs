@@ -159,7 +159,6 @@ class MutationOperators:
         for i in range(len(mutated_individual)):
             if random.random() < mutation_prob:
                 swap_idx = random.randint(0, len(mutated_individual) - 1)
-                # Swap the current element with the element at the swap_idx
                 mutated_individual[i], mutated_individual[swap_idx] = mutated_individual[swap_idx], mutated_individual[
                     i]
         return mutated_individual
