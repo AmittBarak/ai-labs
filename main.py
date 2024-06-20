@@ -13,6 +13,8 @@ from sudoku.genes import individual_generator
 from sudoku.mutations import invert_mutation_sudoku
 from sudoku.dataset import games, GAME_SOLUTIONS
 from bin_packing.bin_packing import MutationOperators
+from baldwins_exp.baldwin import EvolutionaryAlgorithm
+import matplotlib.pyplot as plt
 import concurrent.futures
 
 
@@ -20,7 +22,7 @@ def main():
     """Main function to run the selected genetic algorithm."""
     display_menu()
     # choice = input("Enter your choice (0, 1, 2, 3, 4, 5, 6, 7, 8): ")
-    choice = input("Enter your choice (0, 1, 2, 3, 4): ")
+    choice = input("Enter your choice (0, 1, 2, 3, 4, 5): ")
 
     if choice == '0':
         quit()
@@ -33,7 +35,8 @@ def main():
         '1': run_bin_packing,
         '2': run_bin_packing_first_fit,
         '3': run_bin_packing_with_crowding_density_nieching_partition_species_speciation,
-        '4': run_bin_packing_with_mutation_function
+        '4': run_bin_packing_with_mutation_function,
+        '5': run_bladwins_exp
     }
 
     if choice in options:
@@ -54,6 +57,7 @@ def display_menu():
     print("2. Bin packing with First Fit algorithm")
     print("3. Bin packing with crowding density/nieching_partition/species_speciation")
     print("4. Bin packing with mutations")
+    print("5. Baldwin's experiment")
     print("0. Quit")
 
 
@@ -287,6 +291,51 @@ def run_bin_packing_with_mutation_function():
         best_solution, num_bins_used, best_generation = ga_bin_packing.run()
         print(f"Best solution for {problem_id} uses {num_bins_used} bins and took {best_generation} generations.")
 
+def run_bladwins_exp():
+    target_pattern = ['1', '0', '{', '1', '}']
+    generations = 100
+    mutation_rate = 0.01
+
+    # Run simulation with learning
+    ea_with_learning = EvolutionaryAlgorithm(target_pattern, generations=generations, mutation_rate=mutation_rate)
+    correct_matches_with_learning, incorrect_positions_with_learning, learned_bits_with_learning = ea_with_learning.run_simulation(
+        with_learning=True)
+
+    # Run simulation without learning
+    ea_without_learning = EvolutionaryAlgorithm(target_pattern, generations=generations, mutation_rate=mutation_rate)
+    correct_matches_without_learning, incorrect_positions_without_learning, learned_bits_without_learning = ea_without_learning.run_simulation(
+        with_learning=False)
+
+    # Plot results
+    plt.figure(figsize=(14, 7))
+    plt.subplot(1, 2, 1)
+    plt.plot(correct_matches_with_learning, label='Correct Matches with Learning')
+    plt.plot(correct_matches_without_learning, label='Correct Matches without Learning')
+    plt.xlabel('Generation')
+    plt.ylabel('Percentage')
+    plt.title('Correct Matches')
+    plt.legend()
+
+    plt.subplot(1, 2, 2)
+    plt.plot(incorrect_positions_with_learning, label='Incorrect Positions with Learning')
+    plt.plot(incorrect_positions_without_learning, label='Incorrect Positions without Learning')
+    plt.xlabel('Generation')
+    plt.ylabel('Percentage')
+    plt.title('Incorrect Positions')
+    plt.legend()
+
+    plt.tight_layout()
+    plt.show()
+
+    plt.figure(figsize=(7, 7))
+    plt.plot(learned_bits_with_learning, label='Bits Learned with Learning')
+    plt.plot(learned_bits_without_learning, label='Bits Learned without Learning')
+    plt.xlabel('Generation')
+    plt.ylabel('Percentage')
+    plt.title('Bits Learned')
+    plt.legend()
+
+    plt.show()
 
 def get_selection_method() -> SelectionMethod:
     """Get the selection method from the user."""
