@@ -557,37 +557,3 @@ def print_routes(routes, cost, algorithm_name):
                     route = route + [0]
         print(f"Route #{i + 1}: {' '.join(map(str, route))}")
     print(f"Cost {cost}")
-
-# Example usage for testing
-# Test the algorithms on the Ackley function
-print("Testing on Ackley Function:")
-aco_ackley = ackley_function(np.array(flatten_routes(aco_solution)))
-sa_ackley = ackley_function(np.array(flatten_routes(sa_solution)))
-ils_ackley = ackley_function(np.array(flatten_routes(ils_solution)))
-ts_ackley = ackley_function(np.array(flatten_routes(ts_solution)))
-ga_ackley = ackley_function(np.array(flatten_routes([ga_solution])))
-alns_ackley = ackley_function(np.array(flatten_routes(alns_solution)))
-
-print_routes(aco_solution, aco_length, "ACO")
-plot_routes(aco_solution, coords, "ACO")
-print(f"Ackley Value: {aco_ackley}")
-
-print_routes(sa_solution, sa_length, "SA")
-plot_routes(sa_solution, coords, "SA")
-print(f"Ackley Value: {sa_ackley}")
-
-print_routes(ils_solution, ils_length, "ILS")
-plot_routes(ils_solution, coords, "ILS")
-print(f"Ackley Value: {ils_ackley}")
-
-print_routes(ts_solution, ts_length, "TS")
-plot_routes(ts_solution, coords, "TS")
-print(f"Ackley Value: {ts_ackley}")
-
-print_routes([ga_solution], ga_length, "GA Island Model")
-plot_routes([ga_solution], coords, "GA Island Model")
-print(f"GA Island Model Ackley Value: {ga_ackley}")
-
-print_routes(alns_solution, sum(aco.route_length(route) for route in alns_solution), "ALNS")
-plot_routes(alns_solution, coords, "ALNS")
-print(f"Ackley Value: {alns_ackley}")

@@ -1,11 +1,17 @@
 import os
 import random
+
+import numpy as np
+
 import sudoku.utils
 from engine.selection import nieching_partition, crowding_density, species_speciation
 from hello_world.hello_world import crossover, fitness_GA, mutate
 from bin_packing import utils as bin_packing_utils
 from bin_packing import bin_packing as bin_packing
 from engine.algorithm import GeneticSettings, SelectionMethod, run_genetic_algorithm
+from lab3.CVRP import ackley_function, flatten_routes, aco_solution, sa_solution, ils_solution, ts_solution, \
+    ga_solution, alns_solution, aco_length, coords, print_routes, plot_routes, sa_length, ils_length, ts_length, \
+    ga_length, aco
 from sudoku import utils
 from sudoku.crossover import cycle_crossover_2d
 from sudoku.fitness import calculate_sudoku_fitness
@@ -22,7 +28,7 @@ def main():
     """Main function to run the selected genetic algorithm."""
     display_menu()
     # choice = input("Enter your choice (0, 1, 2, 3, 4, 5, 6, 7, 8): ")
-    choice = input("Enter your choice (0, 1, 2, 3, 4, 5): ")
+    choice = input("Enter your choice (0, 1, 2, 3, 4, 5, 6): ")
 
     if choice == '0':
         quit()
@@ -36,7 +42,8 @@ def main():
         '2': run_bin_packing_first_fit,
         '3': run_bin_packing_with_crowding_density_nieching_partition_species_speciation,
         '4': run_bin_packing_with_mutation_function,
-        '5': run_bladwins_exp
+        '5': run_bladwins_exp,
+        '6': run_cvrp
     }
 
     if choice in options:
@@ -58,6 +65,7 @@ def display_menu():
     print("3. Bin packing with crowding density/nieching_partition/species_speciation")
     print("4. Bin packing with mutations")
     print("5. Baldwin's experiment")
+    print("6. CVRP")
     print("0. Quit")
 
 
@@ -336,6 +344,39 @@ def run_bladwins_exp():
     plt.legend()
 
     plt.show()
+
+def run_cvrp():
+    print("Testing on Ackley Function:")
+    aco_ackley = ackley_function(np.array(flatten_routes(aco_solution)))
+    sa_ackley = ackley_function(np.array(flatten_routes(sa_solution)))
+    ils_ackley = ackley_function(np.array(flatten_routes(ils_solution)))
+    ts_ackley = ackley_function(np.array(flatten_routes(ts_solution)))
+    ga_ackley = ackley_function(np.array(flatten_routes([ga_solution])))
+    alns_ackley = ackley_function(np.array(flatten_routes(alns_solution)))
+
+    print_routes(aco_solution, aco_length, "ACO")
+    plot_routes(aco_solution, coords, "ACO")
+    print(f"Ackley Value: {aco_ackley}")
+
+    print_routes(sa_solution, sa_length, "SA")
+    plot_routes(sa_solution, coords, "SA")
+    print(f"Ackley Value: {sa_ackley}")
+
+    print_routes(ils_solution, ils_length, "ILS")
+    plot_routes(ils_solution, coords, "ILS")
+    print(f"Ackley Value: {ils_ackley}")
+
+    print_routes(ts_solution, ts_length, "TS")
+    plot_routes(ts_solution, coords, "TS")
+    print(f"Ackley Value: {ts_ackley}")
+
+    print_routes([ga_solution], ga_length, "GA Island Model")
+    plot_routes([ga_solution], coords, "GA Island Model")
+    print(f"GA Island Model Ackley Value: {ga_ackley}")
+
+    print_routes(alns_solution, sum(aco.route_length(route) for route in alns_solution), "ALNS")
+    plot_routes(alns_solution, coords, "ALNS")
+    print(f"Ackley Value: {alns_ackley}")
 
 def get_selection_method() -> SelectionMethod:
     """Get the selection method from the user."""
