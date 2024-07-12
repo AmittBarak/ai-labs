@@ -28,7 +28,7 @@ def main():
     """Main function to run the selected genetic algorithm."""
     display_menu()
     # choice = input("Enter your choice (0, 1, 2, 3, 4, 5, 6, 7, 8): ")
-    choice = input("Enter your choice (0, 1, 2, 3, 4, 5, 6): ")
+    choice = input("Enter your choice (0, 1, 2, 3, 4, 5, 6, 7): ")
 
     if choice == '0':
         quit()
@@ -43,7 +43,8 @@ def main():
         '3': run_bin_packing_with_crowding_density_nieching_partition_species_speciation,
         '4': run_bin_packing_with_mutation_function,
         '5': run_bladwins_exp,
-        '6': run_cvrp
+        '6': run_cvrp,
+        '7': run_hillis
     }
 
     if choice in options:
@@ -66,6 +67,7 @@ def display_menu():
     print("4. Bin packing with mutations")
     print("5. Baldwin's experiment")
     print("6. CVRP")
+    print("7. Hillis")
     print("0. Quit")
 
 
@@ -377,6 +379,9 @@ def run_cvrp():
     print_routes(alns_solution, sum(aco.route_length(route) for route in alns_solution), "ALNS")
     plot_routes(alns_solution, coords, "ALNS")
     print(f"Ackley Value: {alns_ackley}")
+
+def run_hillis():
+
 
 def get_selection_method() -> SelectionMethod:
     """Get the selection method from the user."""
