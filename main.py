@@ -410,9 +410,6 @@ def run_hillis():
     print(f"Evolved Network Correctness: {correct}/{len(ca.vector_population)}")
     print(f"QuickSort Correctness: {quicksort_correct}/{len(ca.vector_population)}")
 
-    # Repeat the above steps for other values of K as needed
-    # Parameters for K=10 and K=16 can be similarly processed
-
     # Parameters for K=10
     vector_length = 10
     population_size = 150
@@ -441,7 +438,35 @@ def run_hillis():
     print(f"Evolved Network Correctness: {correct}/{len(ca.vector_population)}")
     print(f"QuickSort Correctness: {quicksort_correct}/{len(ca.vector_population)}")
 
-    # Similarly for K=16
+    # Parameters for K=10
+    vector_length = 10
+    population_size = 150
+    num_generations = 500
+    mutation_rate = 0.1
+    num_offspring = 100
+
+    # Initial populations for K=10
+    print("For K=10 without bitonic")
+    ca = CoevolutionaryAlgorithm(population_size, vector_length, use_bitonic=False, initial_mutation_rate=mutation_rate)
+    fitness_history = ca.evolve(num_generations, num_offspring)
+    ca.plot_fitness(fitness_history)
+
+    # Cross-validation for K=10
+    mean_score, std_dev = ca.cross_validate(k=5)
+    print(f"Cross-Validation Mean Score for K=10: {mean_score}")
+    print(f"Cross-Validation Standard Deviation for K=10: {std_dev}")
+
+    # Best network found for K=10
+    best_network = max(ca.population, key=lambda network: network.fitness(ca.vector_population))
+    print("Best Network Found for K=10:")
+    print(best_network.network)
+    best_network.plot_network()  # Plot the network visualization
+
+    # Compare with QuickSort for K=10
+    correct, quicksort_correct = ca.compare_with_quicksort(best_network, ca.vector_population)
+    print(f"Evolved Network Correctness: {correct}/{len(ca.vector_population)}")
+    print(f"QuickSort Correctness: {quicksort_correct}/{len(ca.vector_population)}")
+
     # Parameters for K=16
     vector_length = 16
     population_size = 200
@@ -451,6 +476,35 @@ def run_hillis():
 
     # Initial populations for K=16
     ca = CoevolutionaryAlgorithm(population_size, vector_length, use_bitonic=True, initial_mutation_rate=mutation_rate)
+    fitness_history = ca.evolve(num_generations, num_offspring)
+    ca.plot_fitness(fitness_history)
+
+    # Cross-validation for K=16
+    mean_score, std_dev = ca.cross_validate(k=5)
+    print(f"Cross-Validation Mean Score for K=16: {mean_score}")
+    print(f"Cross-Validation Standard Deviation for K=16: {std_dev}")
+
+    # Best network found for K=16
+    best_network = max(ca.population, key=lambda network: network.fitness(ca.vector_population))
+    print("Best Network Found for K=16")
+    print(best_network.network)
+    best_network.plot_network()  # Plot the network visualization
+
+    # Compare with QuickSort for K=16
+    correct, quicksort_correct = ca.compare_with_quicksort(best_network, ca.vector_population)
+    print(f"Evolved Network Correctness: {correct}/{len(ca.vector_population)}")
+    print(f"QuickSort Correctness: {quicksort_correct}/{len(ca.vector_population)}")
+
+    # Parameters for K=16
+    vector_length = 16
+    population_size = 200
+    num_generations = 500
+    mutation_rate = 0.05  # Increase the mutation rate slightly for larger vector lengths
+    num_offspring = 100
+
+    # Initial populations for K=16
+    print("for K=16 without bitonic")
+    ca = CoevolutionaryAlgorithm(population_size, vector_length, use_bitonic=False, initial_mutation_rate=mutation_rate)
     fitness_history = ca.evolve(num_generations, num_offspring)
     ca.plot_fitness(fitness_history)
 

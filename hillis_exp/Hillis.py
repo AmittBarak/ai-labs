@@ -337,27 +337,40 @@ class GeneticAlgorithm:
             generation (int): The current generation number.
             best_fitness (float): The best fitness score in the current generation.
             fitness_history (list): The history of fitness scores.
+
+        Convergence Problems Handled:
+            1. The Disengagement Effect: When all individuals have the same fitness score.
+            2. The Effect of Circularity and Repetition: When the fitness range is too narrow.
+            3. The Forgetting Effect: When there's no improvement in the best fitness score over generations.
+            4. Overcompatibility Effect with a Rival Population: Reinforcing mutation on best individuals.
+            5. The Fitness Gradient Loss Effect: Low standard deviation in fitness scores.
         """
+        # Problem 1: The Disengagement Effect - All fitness scores are the same
         if len(set(fitnesses)) == 1:
             self.population = [SortingNetwork(self.vector_length) for _ in range(len(self.population))]
 
+        # Problem 2: The Effect of Circularity and Repetition - Fitness range is too narrow
         if max(fitnesses) - min(fitnesses) < 1:
             for network in self.population:
                 network.mutate(0.5)
 
+        # Problem 3: The Forgetting Effect - No improvement in best fitness score
         if generation > 0 and best_fitness <= fitness_history[-1][0]:
             num_to_reinitialize = len(self.population) // 10
             for i in range(num_to_reinitialize):
                 self.population[i] = SortingNetwork(self.vector_length)
 
+        # Problem 4: Overcompatibility Effect with a Rival Population - Reinforce mutation on best individuals
         for i in range(len(self.population)):
             if fitnesses[i] == max(fitnesses):
                 self.population[i].mutate(0.5)
 
+        # Problem 5: The Fitness Gradient Loss Effect - Low standard deviation in fitness scores
         if np.std(fitnesses) < 0.01:
             num_to_reinitialize = len(self.population) // 5
             for i in range(num_to_reinitialize):
                 self.population[i] = SortingNetwork(self.vector_length)
+
 
     def plot_fitness(self, fitness_history):
         """
