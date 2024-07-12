@@ -557,3 +557,5 @@ def print_routes(routes, cost, algorithm_name):
                     route = route + [0]
         print(f"Route #{i + 1}: {' '.join(map(str, route))}")
     print(f"Cost {cost}")
+
+
