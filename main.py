@@ -9,6 +9,7 @@ from hello_world.hello_world import crossover, fitness_GA, mutate
 from bin_packing import utils as bin_packing_utils
 from bin_packing import bin_packing as bin_packing
 from engine.algorithm import GeneticSettings, SelectionMethod, run_genetic_algorithm
+from hillis_exp.Hillis import CoevolutionaryAlgorithm
 from lab3.CVRP import ackley_function, flatten_routes, aco_solution, sa_solution, ils_solution, ts_solution, \
     ga_solution, alns_solution, aco_length, coords, print_routes, plot_routes, sa_length, ils_length, ts_length, \
     ga_length, aco
@@ -381,6 +382,93 @@ def run_cvrp():
     print(f"Ackley Value: {alns_ackley}")
 
 def run_hillis():
+    # Parameters for K=6
+    vector_length = 6
+    population_size = 100
+    num_generations = 100
+    mutation_rate = 0.1
+    num_offspring = 50
+
+    # Initial populations for K=6
+    ca = CoevolutionaryAlgorithm(population_size, vector_length, use_bitonic=True, initial_mutation_rate=mutation_rate)
+    fitness_history = ca.evolve(num_generations, num_offspring)
+    ca.plot_fitness(fitness_history)
+
+    # Cross-validation for K=6
+    mean_score, std_dev = ca.cross_validate(k=5)
+    print(f"Cross-Validation Mean Score for K=6: {mean_score}")
+    print(f"Cross-Validation Standard Deviation for K=6: {std_dev}")
+
+    # Best network found for K=6
+    best_network = max(ca.population, key=lambda network: network.fitness(ca.vector_population))
+    print("Best Network Found for K=6:")
+    print(best_network.network)
+    best_network.plot_network()  # Plot the network visualization
+
+    # Compare with QuickSort for K=6
+    correct, quicksort_correct = ca.compare_with_quicksort(best_network, ca.vector_population)
+    print(f"Evolved Network Correctness: {correct}/{len(ca.vector_population)}")
+    print(f"QuickSort Correctness: {quicksort_correct}/{len(ca.vector_population)}")
+
+    # Repeat the above steps for other values of K as needed
+    # Parameters for K=10 and K=16 can be similarly processed
+
+    # Parameters for K=10
+    vector_length = 10
+    population_size = 150
+    num_generations = 500
+    mutation_rate = 0.1
+    num_offspring = 100
+
+    # Initial populations for K=10
+    ca = CoevolutionaryAlgorithm(population_size, vector_length, use_bitonic=True, initial_mutation_rate=mutation_rate)
+    fitness_history = ca.evolve(num_generations, num_offspring)
+    ca.plot_fitness(fitness_history)
+
+    # Cross-validation for K=10
+    mean_score, std_dev = ca.cross_validate(k=5)
+    print(f"Cross-Validation Mean Score for K=10: {mean_score}")
+    print(f"Cross-Validation Standard Deviation for K=10: {std_dev}")
+
+    # Best network found for K=10
+    best_network = max(ca.population, key=lambda network: network.fitness(ca.vector_population))
+    print("Best Network Found for K=10:")
+    print(best_network.network)
+    best_network.plot_network()  # Plot the network visualization
+
+    # Compare with QuickSort for K=10
+    correct, quicksort_correct = ca.compare_with_quicksort(best_network, ca.vector_population)
+    print(f"Evolved Network Correctness: {correct}/{len(ca.vector_population)}")
+    print(f"QuickSort Correctness: {quicksort_correct}/{len(ca.vector_population)}")
+
+    # Similarly for K=16
+    # Parameters for K=16
+    vector_length = 16
+    population_size = 200
+    num_generations = 500
+    mutation_rate = 0.05  # Increase the mutation rate slightly for larger vector lengths
+    num_offspring = 100
+
+    # Initial populations for K=16
+    ca = CoevolutionaryAlgorithm(population_size, vector_length, use_bitonic=True, initial_mutation_rate=mutation_rate)
+    fitness_history = ca.evolve(num_generations, num_offspring)
+    ca.plot_fitness(fitness_history)
+
+    # Cross-validation for K=16
+    mean_score, std_dev = ca.cross_validate(k=5)
+    print(f"Cross-Validation Mean Score for K=16: {mean_score}")
+    print(f"Cross-Validation Standard Deviation for K=16: {std_dev}")
+
+    # Best network found for K=16
+    best_network = max(ca.population, key=lambda network: network.fitness(ca.vector_population))
+    print("Best Network Found for K=16")
+    print(best_network.network)
+    best_network.plot_network()  # Plot the network visualization
+
+    # Compare with QuickSort for K=16
+    correct, quicksort_correct = ca.compare_with_quicksort(best_network, ca.vector_population)
+    print(f"Evolved Network Correctness: {correct}/{len(ca.vector_population)}")
+    print(f"QuickSort Correctness: {quicksort_correct}/{len(ca.vector_population)}")
 
 
 def get_selection_method() -> SelectionMethod:
