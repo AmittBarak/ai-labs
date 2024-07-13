@@ -84,17 +84,34 @@ class SortingNetwork:
         bitonic_sort(True, 0, self.vector_length)
         return network
 
+    # def initialize_random_network(self):
+    #     """
+    #     Initializes a random sorting network.
+    #
+    #     Returns:
+    #         list: A list of random comparator pairs defining the sorting network.
+    #     """
+    #     network = []
+    #     seen_pairs = set()
+    #
+    #     while len(network) < int(self.vector_length * np.log2(self.vector_length)):
+    #         i, j = random.randint(0, self.vector_length - 1), random.randint(0, self.vector_length - 1)
+    #         if i != j:
+    #             pair = tuple(sorted((i, j)))  # Sort the tuple to handle (i, j) and (j, i) as the same
+    #             if pair not in seen_pairs:
+    #                 seen_pairs.add(pair)
+    #                 network.append(pair)
+    #
+    #     return network
     def initialize_random_network(self):
         """
-        Initializes a random sorting network.
-
-        Returns:
-            list: A list of random comparator pairs defining the sorting network.
+        Initializes a random sorting network with a maximum number of comparators for K=16.
         """
+        max_comparators = 61 if self.vector_length == 16 else int(self.vector_length * np.log2(self.vector_length))
         network = []
         seen_pairs = set()
 
-        while len(network) < int(self.vector_length * np.log2(self.vector_length)):
+        while len(network) < max_comparators:
             i, j = random.randint(0, self.vector_length - 1), random.randint(0, self.vector_length - 1)
             if i != j:
                 pair = tuple(sorted((i, j)))  # Sort the tuple to handle (i, j) and (j, i) as the same
@@ -120,22 +137,40 @@ class SortingNetwork:
                 vec[i], vec[j] = vec[j], vec[i]
         return vec
 
+    # def mutate(self, mutation_rate):
+    #     """
+    #     Mutates the sorting network with a given mutation rate.
+    #
+    #     Args:
+    #         mutation_rate (float): The probability of mutation for each comparator pair.
+    #
+    #     Returns:
+    #         SortingNetwork: The mutated sorting network.
+    #     """
+    #     for i in range(len(self.network)):
+    #         if random.random() < mutation_rate:
+    #             new_i, new_j = random.randint(0, self.vector_length - 1), random.randint(0, self.vector_length - 1)
+    #             while new_i == new_j:  # Ensure no self-comparisons
+    #                 new_j = random.randint(0, self.vector_length - 1)
+    #             self.network[i] = (new_i, new_j)
+    #     return self
     def mutate(self, mutation_rate):
         """
-        Mutates the sorting network with a given mutation rate.
-
-        Args:
-            mutation_rate (float): The probability of mutation for each comparator pair.
-
-        Returns:
-            SortingNetwork: The mutated sorting network.
+        Mutates the sorting network with a given mutation rate, ensuring the number of comparators does not exceed the limit.
         """
+        max_comparators = 61 if self.vector_length == 16 else len(self.network)
         for i in range(len(self.network)):
             if random.random() < mutation_rate:
                 new_i, new_j = random.randint(0, self.vector_length - 1), random.randint(0, self.vector_length - 1)
                 while new_i == new_j:  # Ensure no self-comparisons
                     new_j = random.randint(0, self.vector_length - 1)
-                self.network[i] = (new_i, new_j)
+                new_pair = tuple(sorted((new_i, new_j)))
+                if new_pair not in self.network:
+                    self.network[i] = new_pair
+
+        # Truncate network if it exceeds the maximum comparators
+        self.network = self.network[:max_comparators]
+
         return self
 
     @staticmethod
