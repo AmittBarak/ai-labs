@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import itertools
 from colorama import Fore, Style
+from copy import deepcopy
 
 
 class SortingNetwork:
@@ -84,25 +85,6 @@ class SortingNetwork:
         bitonic_sort(True, 0, self.vector_length)
         return network
 
-    # def initialize_random_network(self):
-    #     """
-    #     Initializes a random sorting network.
-    #
-    #     Returns:
-    #         list: A list of random comparator pairs defining the sorting network.
-    #     """
-    #     network = []
-    #     seen_pairs = set()
-    #
-    #     while len(network) < int(self.vector_length * np.log2(self.vector_length)):
-    #         i, j = random.randint(0, self.vector_length - 1), random.randint(0, self.vector_length - 1)
-    #         if i != j:
-    #             pair = tuple(sorted((i, j)))  # Sort the tuple to handle (i, j) and (j, i) as the same
-    #             if pair not in seen_pairs:
-    #                 seen_pairs.add(pair)
-    #                 network.append(pair)
-    #
-    #     return network
     def initialize_random_network(self):
         """
         Initializes a random sorting network with a maximum number of comparators for K=16.
@@ -137,23 +119,6 @@ class SortingNetwork:
                 vec[i], vec[j] = vec[j], vec[i]
         return vec
 
-    # def mutate(self, mutation_rate):
-    #     """
-    #     Mutates the sorting network with a given mutation rate.
-    #
-    #     Args:
-    #         mutation_rate (float): The probability of mutation for each comparator pair.
-    #
-    #     Returns:
-    #         SortingNetwork: The mutated sorting network.
-    #     """
-    #     for i in range(len(self.network)):
-    #         if random.random() < mutation_rate:
-    #             new_i, new_j = random.randint(0, self.vector_length - 1), random.randint(0, self.vector_length - 1)
-    #             while new_i == new_j:  # Ensure no self-comparisons
-    #                 new_j = random.randint(0, self.vector_length - 1)
-    #             self.network[i] = (new_i, new_j)
-    #     return self
     def mutate(self, mutation_rate):
         """
         Mutates the sorting network with a given mutation rate, ensuring the number of comparators does not exceed the limit.
@@ -200,21 +165,23 @@ class SortingNetwork:
         return child
 
     def fitness(self, vectors):
-        """
-        Calculates the fitness of the sorting network based on how well it sorts a list of vectors.
-
-        Args:
-            vectors (list of list): The list of vectors to be sorted.
-
-        Returns:
-            float: The fitness score of the sorting network.
-        """
-        fitness = 0
+        base_fitness = 0
         for vector in vectors:
             sorted_vector = sorted(vector)
             result = self.apply(vector)
-            fitness += sum(a == b for a, b in zip(result, sorted_vector)) / len(vector)
-        return fitness
+            base_fitness += sum(a == b for a, b in zip(result, sorted_vector)) / len(vector)
+
+        # Evaluate the complexity of the network
+        complexity = evaluate_complexity(self)
+        complexity_penalty = complexity / self.vector_length  # Normalize complexity penalty
+
+        # Apply penalty only if the base fitness is very high
+        if base_fitness > 0.95 * len(vectors):
+            weighted_fitness = base_fitness - (0.05 * complexity_penalty)
+        else:
+            weighted_fitness = base_fitness
+
+        return weighted_fitness
 
     def count_comparisons(self):
         """
@@ -330,6 +297,7 @@ class GeneticAlgorithm:
                 print(f"Best fitness: {best_fitness}, Target fitness: {len(self.vectors)}")
                 break
 
+
             elite = self.population[fitnesses.index(best_fitness)]
             selected = self.selection(fitnesses, num_offspring, tournament_size)
             offspring = [
@@ -359,7 +327,8 @@ class GeneticAlgorithm:
         selected = []
         for _ in range(num_offspring):
             tournament = random.sample(list(zip(self.population, fitnesses)), k=tournament_size)
-            tournament_winner = max(tournament, key=lambda x: x[1] - (x[0].count_comparisons() / (self.vector_length * 8 * np.log2(self.vector_length))))
+            tournament_winner = max(tournament, key=lambda x: x[1] - (x[0].count_comparisons() /
+                                                                      (self.vector_length * 8 * np.log2(self.vector_length))))
             selected.append(tournament_winner[0])
         return selected
 
@@ -372,40 +341,40 @@ class GeneticAlgorithm:
             generation (int): The current generation number.
             best_fitness (float): The best fitness score in the current generation.
             fitness_history (list): The history of fitness scores.
-
-        Convergence Problems Handled:
-            1. The Disengagement Effect: When all individuals have the same fitness score.
-            2. The Effect of Circularity and Repetition: When the fitness range is too narrow.
-            3. The Forgetting Effect: When there's no improvement in the best fitness score over generations.
-            4. Overcompatibility Effect with a Rival Population: Reinforcing mutation on best individuals.
-            5. The Fitness Gradient Loss Effect: Low standard deviation in fitness scores.
         """
-        # Problem 1: The Disengagement Effect - All fitness scores are the same
         if len(set(fitnesses)) == 1:
             self.population = [SortingNetwork(self.vector_length) for _ in range(len(self.population))]
 
-        # Problem 2: The Effect of Circularity and Repetition - Fitness range is too narrow
         if max(fitnesses) - min(fitnesses) < 1:
             for network in self.population:
                 network.mutate(0.5)
 
-        # Problem 3: The Forgetting Effect - No improvement in best fitness score
+        std_dev = np.std(fitnesses)
+        if std_dev < 0.01:  # Low standard deviation indicates lack of diversity
+            self.mutation_rate += 0.01  # Increase mutation rate
+        elif std_dev > 0.1:
+            self.mutation_rate = max(0.01, self.mutation_rate - 0.01)  # Decrease mutation rate to stabilize the search
+
+        # Regenerate part of the population if there is no improvement
+        if generation > 1 and best_fitness <= fitness_history[-1][0]:
+            num_to_reinitialize = len(self.population) // 5
+            for i in range(num_to_reinitialize):
+                self.population[i] = SortingNetwork(self.vector_length)
+                self.population[i].mutate(self.mutation_rate)
+
         if generation > 0 and best_fitness <= fitness_history[-1][0]:
             num_to_reinitialize = len(self.population) // 10
             for i in range(num_to_reinitialize):
                 self.population[i] = SortingNetwork(self.vector_length)
 
-        # Problem 4: Overcompatibility Effect with a Rival Population - Reinforce mutation on best individuals
         for i in range(len(self.population)):
             if fitnesses[i] == max(fitnesses):
                 self.population[i].mutate(0.5)
 
-        # Problem 5: The Fitness Gradient Loss Effect - Low standard deviation in fitness scores
         if np.std(fitnesses) < 0.01:
             num_to_reinitialize = len(self.population) // 5
             for i in range(num_to_reinitialize):
                 self.population[i] = SortingNetwork(self.vector_length)
-
 
     def plot_fitness(self, fitness_history):
         """
@@ -531,6 +500,9 @@ class CoevolutionaryAlgorithm(GeneticAlgorithm):
             list: A list of tuples representing the fitness history of the coevolutionary algorithm.
         """
         fitness_history = []
+        required_fitness = len(self.vector_population)
+        acceptable_margin = 0.05 * required_fitness
+
         for generation in range(num_generations):
             network_fitnesses = [network.fitness(self.vector_population) for network in self.population]
             vector_fitnesses = self.evaluate_vectors(self.vector_population)
@@ -539,11 +511,18 @@ class CoevolutionaryAlgorithm(GeneticAlgorithm):
             average_network_fitness = np.mean(network_fitnesses)
             best_network = self.population[network_fitnesses.index(best_network_fitness)]
             fitness_history.append((best_network_fitness, average_network_fitness, best_network.count_comparisons()))
-            print(f"Generation {generation}: Best Network Fitness = {best_network_fitness}, Average Network Fitness = {average_network_fitness}, Comparisons = {best_network.count_comparisons()}")
 
             if best_network_fitness == len(self.vector_population):
                 print(f"Best network fitness: {best_network_fitness}, Target fitness: {len(self.vector_population)}")
                 break
+            if best_network_fitness >= required_fitness - acceptable_margin:
+                print(
+                    f"Found the best generation {generation}: Best Network Fitness = {required_fitness}, Average Network Fitness = "
+                    f"{average_network_fitness}, Comparisons = {best_network.count_comparisons()}")
+
+                break
+            print(f"Generation {generation}: Best Network Fitness = {best_network_fitness}, Average Network Fitness = {average_network_fitness}, Comparisons = {best_network.count_comparisons()}")
+
 
             elite_network = self.population[network_fitnesses.index(best_network_fitness)]
             selected_networks = self.selection(network_fitnesses, num_offspring, tournament_size)
@@ -617,3 +596,22 @@ class CoevolutionaryAlgorithm(GeneticAlgorithm):
         """
         crossover_point = random.randint(1, len(parent1) - 1)
         return parent1[:crossover_point] + parent2[crossover_point:]
+
+def evaluate_complexity(network):
+    """
+    Calculate the maximum depth of comparisons in a given sorting network to evaluate its complexity.
+    This depth indicates the worst-case scenario in terms of the number of layers a value might pass through.
+
+    Parameters:
+    - network (SortingNetwork): An object representing the sorting network with attributes:
+      - vector_length (int): Length of vectors that the network sorts.
+      - network (list of tuples): List where each tuple (i, j) represents a comparison between indices i and j of a vector.
+
+    Returns:
+    - int: The maximum depth of comparisons in the network.
+    """
+    depths = [0] * network.vector_length
+    for (i, j) in network.network:
+        depths[j] = max(depths[i] + 1, depths[j])
+    max_depth = max(depths)
+    return max_depth
