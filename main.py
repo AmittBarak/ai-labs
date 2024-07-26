@@ -392,7 +392,7 @@ def run_hillis():
     # Initial populations for K=6
     ca = CoevolutionaryAlgorithm(population_size, vector_length, use_bitonic=True, initial_mutation_rate=mutation_rate)
     fitness_history = ca.evolve(num_generations, num_offspring)
-    ca.plot_fitness(fitness_history)
+    ca.plot_fitness(fitness_history, 6, True)
 
     # Cross-validation for K=6
     mean_score, std_dev = ca.cross_validate(k=5)
@@ -403,7 +403,7 @@ def run_hillis():
     best_network = max(ca.population, key=lambda network: network.fitness(ca.vector_population))
     print("Best Network Found for K=6:")
     print(best_network.network)
-    best_network.plot_network()  # Plot the network visualization
+    best_network.plot_network(6, True)  # Plot the network visualization
 
     # Compare with QuickSort for K=6
     correct, quicksort_correct = ca.compare_with_quicksort(best_network, ca.vector_population)
@@ -420,7 +420,7 @@ def run_hillis():
     # Initial populations for K=10
     ca = CoevolutionaryAlgorithm(population_size, vector_length, use_bitonic=True, initial_mutation_rate=mutation_rate)
     fitness_history = ca.evolve(num_generations, num_offspring)
-    ca.plot_fitness(fitness_history)
+    ca.plot_fitness(fitness_history, 10, True)
 
     # Cross-validation for K=10
     mean_score, std_dev = ca.cross_validate(k=5)
@@ -431,7 +431,7 @@ def run_hillis():
     best_network = max(ca.population, key=lambda network: network.fitness(ca.vector_population))
     print("Best Network Found for K=10:")
     print(best_network.network)
-    best_network.plot_network()  # Plot the network visualization
+    best_network.plot_network(10, True)  # Plot the network visualization
 
     # Compare with QuickSort for K=10
     correct, quicksort_correct = ca.compare_with_quicksort(best_network, ca.vector_population)
@@ -449,7 +449,7 @@ def run_hillis():
     print("For K=10 without bitonic")
     ca = CoevolutionaryAlgorithm(population_size, vector_length, use_bitonic=False, initial_mutation_rate=mutation_rate)
     fitness_history = ca.evolve(num_generations, num_offspring)
-    ca.plot_fitness(fitness_history)
+    ca.plot_fitness(fitness_history, 10, False)
 
     # Cross-validation for K=10
     mean_score, std_dev = ca.cross_validate(k=5)
@@ -460,7 +460,7 @@ def run_hillis():
     best_network = max(ca.population, key=lambda network: network.fitness(ca.vector_population))
     print("Best Network Found for K=10:")
     print(best_network.network)
-    best_network.plot_network()  # Plot the network visualization
+    best_network.plot_network(10, False)  # Plot the network visualization
 
     # Compare with QuickSort for K=10
     correct, quicksort_correct = ca.compare_with_quicksort(best_network, ca.vector_population)
@@ -477,7 +477,7 @@ def run_hillis():
     # Initial populations for K=16
     ca = CoevolutionaryAlgorithm(population_size, vector_length, use_bitonic=True, initial_mutation_rate=mutation_rate)
     fitness_history = ca.evolve(num_generations, num_offspring)
-    ca.plot_fitness(fitness_history)
+    ca.plot_fitness(fitness_history, 16, True)
 
     # Cross-validation for K=16
     mean_score, std_dev = ca.cross_validate(k=5)
@@ -488,7 +488,7 @@ def run_hillis():
     best_network = max(ca.population, key=lambda network: network.fitness(ca.vector_population))
     print("Best Network Found for K=16")
     print(best_network.network)
-    best_network.plot_network()  # Plot the network visualization
+    best_network.plot_network(16, True)  # Plot the network visualization
 
     # Compare with QuickSort for K=16
     correct, quicksort_correct = ca.compare_with_quicksort(best_network, ca.vector_population)
@@ -506,7 +506,7 @@ def run_hillis():
     print("for K=16 without bitonic")
     ca = CoevolutionaryAlgorithm(population_size, vector_length, use_bitonic=False, initial_mutation_rate=mutation_rate)
     fitness_history = ca.evolve(num_generations, num_offspring)
-    ca.plot_fitness(fitness_history)
+    ca.plot_fitness(fitness_history, 16, False)
 
     # Cross-validation for K=16
     mean_score, std_dev = ca.cross_validate(k=5)
@@ -517,7 +517,7 @@ def run_hillis():
     best_network = max(ca.population, key=lambda network: network.fitness(ca.vector_population))
     print("Best Network Found for K=16")
     print(best_network.network)
-    best_network.plot_network()  # Plot the network visualization
+    best_network.plot_network(16, False)  # Plot the network visualization
 
     # Compare with QuickSort for K=16
     correct, quicksort_correct = ca.compare_with_quicksort(best_network, ca.vector_population)

@@ -192,9 +192,13 @@ class SortingNetwork:
         """
         return len(self.network)
 
-    def plot_network(self):
+    def plot_network(self, k, use_bitonic):
         """
         Plots the sorting network for visualization.
+
+        Args:
+            k (int): The value of K for which the network is plotted.
+            use_bitonic (bool): Whether the network is bitonic or not.
         """
         fig, ax = plt.subplots()
         for step, (i, j) in enumerate(self.network):
@@ -203,7 +207,8 @@ class SortingNetwork:
             ax.plot(step, j, 'ko')
         ax.set_xlabel("Steps")
         ax.set_ylabel("Indexes")
-        plt.title("Sorting Network Visualization")
+        title = f"Sorting Network for K={k} {'(Bitonic)' if use_bitonic else '(Random)'}"
+        plt.title(title)
         plt.show()
 
 class GeneticAlgorithm:
@@ -376,21 +381,27 @@ class GeneticAlgorithm:
             for i in range(num_to_reinitialize):
                 self.population[i] = SortingNetwork(self.vector_length)
 
-    def plot_fitness(self, fitness_history):
+    def plot_fitness(self, fitness_history, k, use_bitonic):
         """
         Plots the fitness history of the genetic algorithm.
 
         Args:
             fitness_history (list): The history of fitness scores.
+            k (int): The value of K for which the fitness is plotted.
+            use_bitonic (bool): Whether the network is bitonic or not.
         """
         best_fitness = [x[0] for x in fitness_history]
         average_fitness = [x[1] for x in fitness_history]
         comparisons = [x[2] for x in fitness_history]
+
+        plt.figure()
         plt.plot(best_fitness, label="Best Fitness")
         plt.plot(average_fitness, label="Average Fitness")
         plt.plot(comparisons, label="Comparisons")
         plt.xlabel("Generation")
         plt.ylabel("Fitness / Comparisons")
+        title = f"Fitness History for K={k} {'(Bitonic)' if use_bitonic else '(Random)'}"
+        plt.title(title)
         plt.legend()
         plt.show()
 
