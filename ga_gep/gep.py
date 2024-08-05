@@ -3,7 +3,8 @@ from typing import List, Tuple, Dict, Union
 
 class GEPChromosome:
     def __init__(self, length: int):
-        self.genes: List[str] = [random.choice(['+', '-', '*', '/', 'x', '1', '2', '3', '4', '5']) for _ in range(length)]
+        self.genes: List[str] = [random.choice(['+', '-', '*', '/', 'x', '1', '2', '3', '4', '5'])
+                                 for _ in range(length)]
         self.cache: Dict[Tuple, float] = {}
 
     def evaluate(self, x: float) -> float:
@@ -36,8 +37,8 @@ class GEPChromosome:
 
 def fitness_gep(chromosome: GEPChromosome, data: List[Tuple[float, float]]) -> float:
     error = sum((chromosome.evaluate(x) - y) ** 2 for x, y in data)
-    bloat_penalty = len(chromosome.genes) * 0.2  # Increased penalty for length
-    return 1 / (1 + error + bloat_penalty)  # Higher fitness for lower error and smaller size
+    bloat_penalty = len(chromosome.genes) * 0.2
+    return 1 / (1 + error + bloat_penalty)
 
 def gep_to_expression(chromosome: GEPChromosome) -> str:
     stack: List[str] = []
