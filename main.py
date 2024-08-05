@@ -1,10 +1,15 @@
 import os
 import random
+import math
+from collections import defaultdict
+from typing import List, Tuple
 
 import numpy as np
 
 import sudoku.utils
 from engine.selection import nieching_partition, crowding_density, species_speciation
+from ga_gep.ga import genetic_algorithm, print_tree, tree_to_expression, fitness_ga
+from ga_gep.gep import gep_algorithm, gep_to_expression, fitness_gep_with_bloat_control, GEPChromosome
 from hello_world.hello_world import crossover, fitness_GA, mutate
 from bin_packing import utils as bin_packing_utils
 from bin_packing import bin_packing as bin_packing
@@ -29,7 +34,7 @@ def main():
     """Main function to run the selected genetic algorithm."""
     display_menu()
     # choice = input("Enter your choice (0, 1, 2, 3, 4, 5, 6, 7, 8): ")
-    choice = input("Enter your choice (0, 1, 2, 3, 4, 5, 6, 7): ")
+    choice = input("Enter your choice (0, 1, 2, 3, 4, 5, 6, 7, 8): ")
 
     if choice == '0':
         quit()
@@ -45,7 +50,8 @@ def main():
         '4': run_bin_packing_with_mutation_function,
         '5': run_bladwins_exp,
         '6': run_cvrp,
-        '7': run_hillis
+        '7': run_hillis,
+        '8': run_ga_gep
     }
 
     if choice in options:
@@ -69,6 +75,7 @@ def display_menu():
     print("5. Baldwin's experiment")
     print("6. CVRP")
     print("7. Hillis")
+    print("8. GA and GEP")
     print("0. Quit")
 
 
@@ -111,6 +118,43 @@ def run_aging():
     )
     print("Best individual:", best_individual)
     print("Best fitness:", best_fitness)
+
+
+def run_ga_gep():
+    print("Part 1: Genetic Algorithm for Boolean Function Optimization")
+
+    boolean_functions = {
+        "XOR": lambda a, b: a ^ b,
+        "AND": lambda a, b: a and b,
+        "OR": lambda a, b: a or b
+    }
+
+    for func_name, func in boolean_functions.items():
+        best_solution = genetic_algorithm(func)
+        print(f"\nBest solution for {func_name} found:")
+        print("Tree representation:")
+        print_tree(best_solution)
+        print("\nExpression:")
+        print(tree_to_expression(best_solution))
+        print(f"Fitness: {fitness_ga(best_solution, func)}")
+
+    print("\nPart 2: Gene Expression Programming for Polynomial Fitting")
+    target_data = [(x, x ** 3 + 2 * x ** 2 + x + 1) for x in [-1, -0.5, 0, 0.5, 1]]
+
+    best_solution_gep = gep_algorithm(target_data)
+    print_gep_solution(best_solution_gep, target_data)
+
+    print("\nPart 3: Univariate Polynomial Fitting")
+    univariate_data = [(-1, 1), (-0.5, 0.75), (0, 1), (0.5, 1.75), (1, 3)]
+    best_univariate_gep = gep_algorithm(univariate_data)
+    print_gep_solution(best_univariate_gep, univariate_data, "univariate polynomial")
+
+
+def print_gep_solution(solution: GEPChromosome, data: List[Tuple[float, float]], description: str = ""):
+    print(f"Best {description} solution found:")
+    print(f"Genes: {solution.genes}")
+    print(f"Expression: {gep_to_expression(solution)}")
+    print(f"Fitness: {fitness_gep_with_bloat_control(solution, data)}")
 
 
 def run_aging_with_selection_options():
