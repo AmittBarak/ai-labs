@@ -150,6 +150,7 @@ def run_ga_gep():
     print_gep_solution(best_univariate_gep, univariate_data, "univariate polynomial")
 
 
+
 def print_gep_solution(solution: GEPChromosome, data: List[Tuple[float, float]], description: str = ""):
     print(f"Best {description} solution found:")
     print(f"Genes: {solution.genes}")

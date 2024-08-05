@@ -109,7 +109,7 @@ def fitness_ga(tree: Node, target_func: Callable[[bool, bool], bool]) -> float:
             if evaluate_tree(tree, a, b, cache) == target_func(a, b):
                 correct += 1
 
-    return correct - (total_nodes * 0.1)
+    return correct - (total_nodes * 0.2)  # Increased penalty for complexity
 
 
 def count_nodes(node: Optional[Node]) -> int:
@@ -120,7 +120,7 @@ def count_nodes(node: Optional[Node]) -> int:
 
 def crossover_ga(parent1: Node, parent2: Node, max_depth: int) -> Node:
     new_tree = clone_tree(parent1)
-    crossover_point = random.choice(get_internal_nodes(new_tree) or [new_tree])
+    crossover_point = non_uniform_node_selection(new_tree)
     replacement = random.choice(get_nodes(parent2))
 
     if calculate_depth(new_tree) <= max_depth:
@@ -135,8 +135,7 @@ def crossover_ga(parent1: Node, parent2: Node, max_depth: int) -> Node:
 
 
 def mutate_ga(tree: Node, max_depth: int) -> Node:
-    internal_nodes = get_internal_nodes(tree)
-    node_to_mutate = random.choice(internal_nodes or get_nodes(tree))
+    node_to_mutate = non_uniform_node_selection(tree)
 
     if node_to_mutate.value in ['A', 'B']:
         node_to_mutate.value = 'A' if node_to_mutate.value == 'B' else 'B'
@@ -175,6 +174,15 @@ def calculate_depth(node: Optional[Node]) -> int:
     if node is None:
         return 0
     return 1 + max(calculate_depth(node.left), calculate_depth(node.right))
+
+
+def non_uniform_node_selection(tree: Node) -> Node:
+    nodes = get_nodes(tree)
+    internal_nodes = get_internal_nodes(tree)
+
+    if random.random() < 0.7 and internal_nodes:
+        return random.choice(internal_nodes)
+    return random.choice(nodes)
 
 
 def genetic_algorithm(target_func: Callable[[bool, bool], bool]) -> Node:
